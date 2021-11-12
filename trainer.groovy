@@ -13,7 +13,7 @@ def init_game() {
     dealer_hits_soft17 = false
     double_allowed_after_split = false
     surrender_allowed = true
-    running_total = 100
+    running_total = 100.0
     total_attempts = 0
     accurate_attempts = 0
     clear_screen()
@@ -47,25 +47,30 @@ def init_shoe(num_decks) {
     return shoe
 }
 
-def init_wager(Irunning_total, total_attempts, accurate_attempts) {
+def init_wager(running_total, total_attempts, accurate_attempts) {
     if (total_attempts != 0) {
-        println 'Accuracy: ' + (100 * (accurate_attempts/total_attempts)).round(1).toString() + '%'
+        println 'Accuracy: ' + (100 * (accurate_attempts / total_attempts)).round(1).toString() + '%'
     }
-    println 'Balance: ' + running_total.toString()
+    cash = running_total - running_total.intValue()
+    if (cash > 0) {
+        println 'Balance: ' + running_total.intValue().toString() + ' chips and $' + cash.toString()
+    } else {
+        println 'Balance: ' + running_total.intValue().toString()
+    }
     try {
         wager
-    } catch (MissingPropertyException ignored) {
-            if (running_total >= 100) {
-                wager = 100
-            } else {
-                wager = running_total
-            }
+    } catch (MissingPropertyException) {
+        if (running_total >= 10) {
+            wager = 5
+        } else {
+            wager = running_total
+        }
     }
-    if (wager > running_total) {
-        wager = running_total
+    if (wager > running_total.intValue() / 2) {
+        wager = (running_total.intValue() / 2).intValue()
     }
 
-    def input_err = true
+    input_err = true
     while (input_err) {
         def input = System.console().readLine "Enter wager [${wager.toString()}]: "
         if (input.trim() == '') {
@@ -75,16 +80,16 @@ def init_wager(Irunning_total, total_attempts, accurate_attempts) {
             try {
                 assert input.toInteger() > 0
                 try {
-                    assert input.toInteger() <= running_total
+                    assert input.toInteger() <= running_total - input.toInteger()
                     input_err = false
                     wager = input.toInteger()
                 } catch (AssertionError ignored) {
-                        println 'Wager cannot be greater than your chip balance.' + '\7'
+                    println 'Wager must be ' + (running_total.intValue() / 2).intValue() + ' or less so it can be doubled or split.'+ '\7'
                 }
             } catch (AssertionError ignored) {
-                    println 'Must be greater than zero.' + '\7'
+                println 'Wager must be greater than zero.' + '\7'
             } catch (ValueError) {
-                    println 'Must be a number greater than zero.' + '\7'
+                println 'Wager must be a number greater than zero.' + '\7'
             }
         }
     }
@@ -147,15 +152,15 @@ def get_action(hands, wager, surrender_allowed, running_total, default_style) {
             busted = true
             action = ''
         } else {
-            if (running_total - (2 * wager) >= 0 && hand.value.size() == 2) {
+            if (hand.value.size() == 2) {
                 options.add('D to double')
                 valid_actions.add('D')
             }
-            if (hand.value.size() == 2 && hand.value[0][0][0] == hand.value[1][0][0] && running_total - (2 * wager) >= 0) {
+            if (hand.value.size() == 2 && hand.value[0][0][0] == hand.value[1][0][0]) {
                 options.add('S to split')
                 valid_actions.add('S')
             }
-            if (surrender_allowed && hand.value.size() == 2) {
+            if (surrender_allowed) {
                 options.add('Q to surrender')
                 valid_actions.add('Q')
             }
@@ -390,45 +395,6 @@ def check_strategy(hand, dealers_hand, num_decks, wager, action) {
     return correct_strategy
 }
 
-def Xtake_action(hands, action, default_style) {
-    if (action == 'H') {
-        hands[hands.size()-1].add(shoe.remove(0))
-        (hand_score, hand_ranks) = get_hand_info(hands[hands.size()-1])
-        printf "Your Hand: "
-        for (card in hands[hands.size()-1]) {
-            style = colorize(card[0])
-            printf style+card[0]
-            printf default_style+' '
-        }
-        printf '(' + hand_score + ')'
-        printf '\n'
-    }
-    else if (action == 'D') {
-        wager += wager
-        println "You have increased your wager to " + wager
-        hands[hands.size()-1].add(shoe.remove(0))
-        (hand_score, hand_ranks) = get_hand_info(hands[hands.size()-1])
-        printf "Your Hand: "
-        for (card in hands[hands.size()-1]) {
-            style = colorize(card[0])
-            printf style+card[0]
-            printf default_style+' '
-        }
-        printf '(' + hand_score + ')'
-        printf '\n'
-    }
-    else if (action == 'S') {
-        wager += wager
-        println "You have increased your wager to " + wager
-        split_card=hands[hands.size()-1][1]
-        hands[hands.size()-1].remove(split_card)
-        hands[hands.size()]=split_card
-        hands[hands.size()-1].add(shoe.remove(0))
-        hands[hands.size()].add(shoe.remove(0))
-    }
-    return hands
-}
-
 def take_action(hand, action) {
     if (action == 'H') {
         hand.value.add(shoe.remove(0))
@@ -438,15 +404,15 @@ def take_action(hand, action) {
         println "You have increased your wager to " + wager
         hand.value.add(shoe.remove(0))
     }
-    else if (action == 'S') {
-        wager += wager
-        println "You have increased your wager to " + wager
+//    else if (action == 'S') {
+//        wager += wager
+//        println "You have increased your wager to " + wager
 //        split_card=hands[hands.size()-1][1]
 //        hands[hands.size()-1].remove(split_card)
 //        hands[hands.size()]=split_card
 //        hands[hands.size()-1].add(shoe.remove(0))
 //        hands[hands.size()].add(shoe.remove(0))
-    }
+//    }
     return hand
 }
 
@@ -465,19 +431,25 @@ def get_hand_info(hand) {
     return [hand_score, hand_ranks]
 }
 
-def results(dealers_hand,hand, running_total, busted, surrendered) {
+def results(dealers_hand,hand, running_total, blackjack, busted, surrendered) {
     (dealers_hand_score, dealers_hand_ranks) = get_hand_info(dealers_hand)
     (hand_score, hand_ranks) = get_hand_info(hand)
     if ((dealers_hand_score > 21 || dealers_hand_score < hand_score) && !busted && !surrendered) {
         println 'Winner!!!' + '\7'
         println()
-        running_total += wager
+        if (blackjack) {
+            running_total += (wager * 1.5).round(2)
+        } else running_total += wager
     }
-    else if (dealers_hand_score > hand_score || busted || surrendered) {
+    else if (dealers_hand_score > hand_score || busted) {
         println 'The house wins.'
         println()
         running_total -= wager
-
+    }
+    else if (surrendered) {
+        println 'Your wager has been split with the house.'
+        println()
+        running_total -= (wager / 2).round(2)
     } else {
         println 'Push'
         println()
@@ -520,6 +492,7 @@ def dealer_hits(dealers_hand, default_style, busted, surrendered, blackjack) {
     show_dealers_hand(dealers_hand, default_style)
     if (!busted && !surrendered && !blackjack) {
         while (dealers_hand_score < 17) {
+            sleep(1000)
             println 'Dealer hits.'
             dealers_hand.add(shoe.remove(0))
             show_dealers_hand(dealers_hand, default_style)
@@ -540,18 +513,21 @@ def react(hand) {
         if (busted) {
             println 'You bust!' + '\7'
             println()
+        }
+        if (surrendered) {
+            println 'You surrendered your hand.'
+            println()
+        }
+        if (correct_strategy) {
+            accurate_attempts += 1
+            println 'Your strategy is correct.'
+            println()
         } else {
-            if (correct_strategy) {
-                accurate_attempts += 1
-                println 'Your strategy is correct.'
-                println()
-            } else {
-                println 'Your strategy is incorrect.' + '\7'
-                println()
-            }
-            if (action in ['H','D','Q']) {
-                hand = take_action(hand, action)
-            }
+            println 'Your strategy is incorrect.' + '\7'
+            println()
+        }
+        if (action in ['H','D'] && !busted && !surrendered) {
+            hand = take_action(hand, action)
         }
     }
 }
@@ -597,21 +573,18 @@ def mainMethod() {
     def play_again = true
     def default_style = "${(char)27}[37;40m"
     (running_total, num_decks, dealer_hits_soft17, double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts) = init_game()
+    shoe = init_shoe(num_decks)
+    Collections.shuffle(shoe)
 
     while (play_again) {
-
-        //game loop
-        shoe = init_shoe(num_decks)
         wager = init_wager(running_total, total_attempts, accurate_attempts)
-        Collections.shuffle(shoe)
         (hands, dealers_hand) = deal(shoe)
-
         show_start(hands, dealers_hand, default_style)
         (action, busted, surrendered, blackjack) = get_action(hands, wager, surrender_allowed, running_total, default_style)
         for (hand in hands) {
             react(hand)
         }
-        while (action != '') {
+        while (action !in ['','Q']) {
             show_hand(hands, default_style)
             (action, busted, surrendered, blackjack) = get_action(hands, wager, surrender_allowed, running_total, default_style)
             for (hand in hands) {
@@ -628,7 +601,7 @@ def mainMethod() {
         show_hand(hands, default_style)
         dealer_hits(dealers_hand, default_style, busted, surrendered, blackjack)
         for (hand in hands) {
-            running_total = results(dealers_hand, hand, running_total, busted, surrendered)
+            running_total = results(dealers_hand, hand, running_total, blackjack, busted, surrendered)
         }
 //        if (accurate_attempts != total_attempts) {
 //            println 'Game Over.'

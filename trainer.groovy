@@ -29,9 +29,9 @@ def clear_screen() {
 
 def init_shoe(num_decks) {
     shoe = []
-    def suits = ['H','C','D','S']
-    def ranks = ['2','3','4','5','6','7','8','9','0','J','Q','K','A']
-    def vals = [2,3,4,5,6,7,8,9,10,10,10,10,11] * (4 * num_decks)
+    suits = ['H','C','D','S']
+    ranks = ['2','3','4','5','6','7','8','9','0','J','Q','K','A']
+    vals = [2,3,4,5,6,7,8,9,10,10,10,10,11] * (4 * num_decks)
     for (i = 0; i < num_decks; i++) {
         for (suit in suits) {
             for (rank in ranks) {
@@ -72,7 +72,7 @@ def init_wager(running_total, total_attempts, accurate_attempts) {
 
     input_err = true
     while (input_err) {
-        def input = System.console().readLine "Enter wager [${wager.toString()}]: "
+        input = System.console().readLine "Enter wager [${wager.toString()}]: "
         if (input.trim() == '') {
             input_err = false
             input = wager
@@ -97,16 +97,16 @@ def init_wager(running_total, total_attempts, accurate_attempts) {
 }
 
 def deal(shoe) {
-    hands = [0:[]]
-    def dealers_hand = []
-    hands[0].add(shoe.remove(0))
+    hand = []
+    dealers_hand = []
+    hand.add(shoe.remove(0))
     dealers_hand.add(shoe.remove(0))
-    hands[0].add(shoe.remove(0))
+    hand.add(shoe.remove(0))
     dealers_hand.add(shoe.remove(0))
-    return [hands, dealers_hand]
+    return [hand, dealers_hand]
 }
 
-def show_start(hands, dealers_hand, default_style) {
+def show_start(hand, dealers_hand, default_style) {
     clear_screen()
     printf "Dealer's Upcard: "
     style = colorize(dealers_hand[1][0])
@@ -114,77 +114,64 @@ def show_start(hands, dealers_hand, default_style) {
     printf default_style + ' '
     printf '\n'
     println()
-    for (hand in hands) {
-        (hand_score, hand_ranks) = get_hand_info(hand)
-        if (hands.size() == 1) {
-            printf 'Your Hand: '
-        } else {
-            printf 'Your Hand ' + (hand.key + 1).toString() + ': '
-        }
-        for (card in hand.value) {
-            style = colorize(card[0])
-            printf style+card[0]
-            printf default_style+' '
-        }
-        printf '(' + hand_score + ')'
-        printf '\n'
+    (hand_score, hand_ranks, soft_ace) = get_hand_info(hand)
+    printf 'Your Hand: '
+    for (card in hand) {
+        style = colorize(card[0])
+        printf style+card[0]
+        printf default_style+' '
     }
+    printf '(' + hand_score + ')'
+    printf '\n'
 }
 
-def get_action(hands, wager, surrender_allowed, running_total, default_style) {
+def get_action(hand, wager, surrender_allowed, running_total, default_style) {
     busted = false
     surrendered = false
     blackjack = false
     options = ['Press <Enter> to stand or enter H to hit']
     valid_actions = ['', 'H']
-    for (hand in hands) {
-        if (hands.size() > 1) {
-            printf '[Hand ' + (hand.key + 1).toString() + '] '
+    (hand_score, hand_ranks, soft_ace) = get_hand_info(hand)
+    if (hand_score == 21) {
+        if (hand.size() == 2) {
+            blackjack = true
         }
-        (hand_score, hand_ranks) = get_hand_info(hand)
-        if (hand_score == 21) {
-            if (hand.value.size() == 2) {
-                blackjack = true
+        action = ''
+    }
+    else if (hand_score > 21) {
+        busted = true
+        action = ''
+    } else {
+        options.add('D to double')
+        valid_actions.add('D')
+        if (hand.size() == 2 && hand.value[0][0] == hand.value[1][0]) {
+            options.add('S to split')
+            valid_actions.add('S')
+        }
+        if (surrender_allowed) {
+            options.add('Q to surrender')
+            valid_actions.add('Q')
+        }
+        prompt = ''
+        if (options.size() > 1) {
+            for (i = 0; i < (options.size() - 1); i++) {
+                prompt += options[i] + ', '
             }
-            action = ''
-        }
-        else if (hand_score > 21) {
-            busted = true
-            action = ''
+            prompt += 'or ' + options[options.size() - 1] + ': '
         } else {
-            if (hand.value.size() == 2) {
-                options.add('D to double')
-                valid_actions.add('D')
-            }
-            if (hand.value.size() == 2 && hand.value[0][0][0] == hand.value[1][0][0]) {
-                options.add('S to split')
-                valid_actions.add('S')
-            }
-            if (surrender_allowed) {
-                options.add('Q to surrender')
-                valid_actions.add('Q')
-            }
-            def prompt = ''
-            if (options.size() > 1) {
-                for (i = 0; i < (options.size() - 1); i++) {
-                    prompt += options[i] + ', '
+            prompt = options[0] + ': '
+        }
+        action_err = true
+        while (action_err) {
+            action = System.console().readLine prompt
+            action = action.trim().toUpperCase()
+            if (action in valid_actions) {
+                action_err = false
+                if (action == 'Q') {
+                    surrendered = true
                 }
-                prompt += 'or ' + options[options.size() - 1] + ': '
             } else {
-                prompt = options[0] + ': '
-            }
-            def action_err = true
-            while (action_err) {
-                action = System.console().readLine prompt
-                action = action.trim().toUpperCase()
-                if (action in valid_actions) {
-                    action_err = false
-                    if (action == 'Q') {
-                        surrendered = true
-                    }
-                } else {
-                    println 'Invalid entry. Try again.'
-                }
+                println 'Invalid entry. Try again.'
             }
         }
     }
@@ -193,7 +180,7 @@ def get_action(hands, wager, surrender_allowed, running_total, default_style) {
 
 def check_strategy(hand, dealers_hand, num_decks, wager, action) {
     correct_strategy = false
-    (hand_score, hand_ranks) = get_hand_info(hand)
+    (hand_score, hand_ranks, soft_ace) = get_hand_info(hand)
     // A,8
     if (hand_ranks as Set == ['A','8'] as Set && action == ''.toString()) {
         correct_strategy = true
@@ -397,12 +384,12 @@ def check_strategy(hand, dealers_hand, num_decks, wager, action) {
 
 def take_action(hand, action) {
     if (action == 'H') {
-        hand.value.add(shoe.remove(0))
+        hand.add(shoe.remove(0))
     }
     else if (action == 'D') {
         wager += wager
         println "You have increased your wager to " + wager
-        hand.value.add(shoe.remove(0))
+        hand.add(shoe.remove(0))
     }
 //    else if (action == 'S') {
 //        wager += wager
@@ -417,23 +404,25 @@ def take_action(hand, action) {
 }
 
 def get_hand_info(hand) {
-    def hand_score = 0
-    def hand_ranks = []
-    for (card in hand.value) {
-        hand_score += card[1].toInteger()
+    hand_score = 0
+    hand_ranks = []
+    soft_ace = false
+    for (card in hand) {
+        hand_score += card[1]
         hand_ranks.add(card[0][0])
     }
     for (rank in hand_ranks) {
         if (hand_score > 21 && rank == 'A') {
             hand_score -= 10
+            soft_ace = true
         }
     }
-    return [hand_score, hand_ranks]
+    return [hand_score, hand_ranks, soft_ace]
 }
 
 def results(dealers_hand,hand, running_total, blackjack, busted, surrendered) {
-    (dealers_hand_score, dealers_hand_ranks) = get_hand_info(dealers_hand)
-    (hand_score, hand_ranks) = get_hand_info(hand)
+    (dealers_hand_score, dealers_hand_ranks, soft_ace) = get_hand_info(dealers_hand)
+    (hand_score, hand_ranks, soft_ace) = get_hand_info(hand)
     if ((dealers_hand_score > 21 || dealers_hand_score < hand_score) && !busted && !surrendered) {
         println 'Winner!!!' + '\7'
         println()
@@ -441,15 +430,15 @@ def results(dealers_hand,hand, running_total, blackjack, busted, surrendered) {
             running_total += (wager * 1.5).round(2)
         } else running_total += wager
     }
-    else if (dealers_hand_score > hand_score || busted) {
-        println 'The house wins.'
-        println()
-        running_total -= wager
-    }
     else if (surrendered) {
         println 'Your wager has been split with the house.'
         println()
         running_total -= (wager / 2).round(2)
+    }
+    else if (dealers_hand_score > hand_score || busted) {
+        println 'The house wins.'
+        println()
+        running_total -= wager
     } else {
         println 'Push'
         println()
@@ -457,26 +446,20 @@ def results(dealers_hand,hand, running_total, blackjack, busted, surrendered) {
     return running_total
 }
 
-def show_hand(hands, default_style) {
-    for (hand in hands) {
-        (hand_score, hand_ranks) = get_hand_info(hand)
-        if (hands.size() == 1) {
-            printf 'Your Hand: '
-        } else {
-            printf 'Your Hand ' + (hand.key + 1).toString() + ': '
-        }
-        for (card in hand.value) {
-            style = colorize(card[0])
-            printf style+card[0]
-            printf default_style+' '
-        }
-        printf '(' + hand_score + ')'
-        printf '\n'
+def show_hand(hand, default_style) {
+    (hand_score, hand_ranks, soft_ace) = get_hand_info(hand)
+    printf 'Your Hand: '
+    for (card in hand) {
+        style = colorize(card[0])
+        printf style+card[0]
+        printf default_style+' '
     }
+    printf '(' + hand_score + ')'
+    printf '\n'
 }
 
 def show_dealers_hand(dealers_hand, default_style) {
-    (dealers_hand_score, dealers_hand_ranks) = get_hand_info(dealers_hand)
+    (dealers_hand_score, dealers_hand_ranks, soft_ace) = get_hand_info(dealers_hand)
     printf "Dealer's Hand: "
     for (card in dealers_hand) {
         style = colorize(card[0])
@@ -487,11 +470,11 @@ def show_dealers_hand(dealers_hand, default_style) {
     printf '\n'
 }
 
-def dealer_hits(dealers_hand, default_style, busted, surrendered, blackjack) {
-    (dealers_hand_score, dealers_hand_ranks) = get_hand_info(dealers_hand)
+def dealer_hits(dealers_hand, default_style, dealer_hits_soft17,busted, surrendered, blackjack) {
+    (dealers_hand_score, dealers_hand_ranks, soft_ace) = get_hand_info(dealers_hand)
     show_dealers_hand(dealers_hand, default_style)
     if (!busted && !surrendered && !blackjack) {
-        while (dealers_hand_score < 17) {
+        while (dealers_hand_score < 17 || (dealer_hits_soft17 && dealers_hand_score == 17 && soft_ace)) {
             sleep(1000)
             println 'Dealer hits.'
             dealers_hand.add(shoe.remove(0))
@@ -503,29 +486,26 @@ def dealer_hits(dealers_hand, default_style, busted, surrendered, blackjack) {
     }
 }
 
-def react(hand) {
-    correct_strategy = check_strategy(hand.value, dealers_hand, num_decks, wager, action)
+def reaction(hand) {
+    correct_strategy = check_strategy(hand, dealers_hand, num_decks, wager, action)
     if (blackjack) {
         println 'Blackjack!' + '\7'
         println()
     } else {
         total_attempts += 1
-        if (busted) {
-            println 'You bust!' + '\7'
-            println()
-        }
-        if (surrendered) {
-            println 'You surrendered your hand.'
-            println()
-        }
         if (correct_strategy) {
             accurate_attempts += 1
             println 'Your strategy is correct.'
-            println()
         } else {
             println 'Your strategy is incorrect.' + '\7'
-            println()
         }
+        if (busted) {
+            println 'You bust!' + '\7'
+        }
+        if (surrendered) {
+            println 'You have surrendered your hand.'
+        }
+        println()
         if (action in ['H','D'] && !busted && !surrendered) {
             hand = take_action(hand, action)
         }
@@ -538,9 +518,9 @@ def end_of_game(play_again, running_total) {
     if (running_total == 0) {
         println 'You leave with nothing. Play again if you dare!'
     }
-    def again_input_err = true
+    again_input_err = true
     while (again_input_err) {
-        def again_yn = System.console().readLine 'Press <Enter> to play again or enter Q to quit: '
+        again_yn = System.console().readLine 'Press <Enter> to play again or enter Q to quit: '
         if (again_yn.trim() == '') {
             again_input_err = false
             play_again = true
@@ -570,39 +550,33 @@ def colorize(card) {
 }
 
 def mainMethod() {
-    def play_again = true
-    def default_style = "${(char)27}[37;40m"
+    play_again = true
+    default_style = "${(char)27}[37;40m"
     (running_total, num_decks, dealer_hits_soft17, double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts) = init_game()
     shoe = init_shoe(num_decks)
     Collections.shuffle(shoe)
 
     while (play_again) {
         wager = init_wager(running_total, total_attempts, accurate_attempts)
-        (hands, dealers_hand) = deal(shoe)
-        show_start(hands, dealers_hand, default_style)
-        (action, busted, surrendered, blackjack) = get_action(hands, wager, surrender_allowed, running_total, default_style)
-        for (hand in hands) {
-            react(hand)
+        (hand, dealers_hand) = deal(shoe)
+        show_start(hand, dealers_hand, default_style)
+        (action, busted, surrendered, blackjack) = get_action(hand, wager, surrender_allowed, running_total, default_style)
+        reaction(hand)
+        while (action !in ['','D','Q']) {
+            show_hand(hand, default_style)
+            (action, busted, surrendered, blackjack) = get_action(hand, wager, surrender_allowed, running_total, default_style)
+            reaction(hand)
         }
-        while (action !in ['','Q']) {
-            show_hand(hands, default_style)
-            (action, busted, surrendered, blackjack) = get_action(hands, wager, surrender_allowed, running_total, default_style)
-            for (hand in hands) {
-                react(hand)
-            }
-        }
-        if (action == 'S') {
-            split_card = hands[0][1]
-            hands[0].remove(split_card)
-            hands[1] = split_card
-            hands[0].add(shoe.remove(0))
-            hands[1].add(shoe.remove(0))
-        }
-        show_hand(hands, default_style)
-        dealer_hits(dealers_hand, default_style, busted, surrendered, blackjack)
-        for (hand in hands) {
-            running_total = results(dealers_hand, hand, running_total, blackjack, busted, surrendered)
-        }
+//        if (action == 'S') {
+//            split_card = hands[0][1]
+//            hands[0].remove(split_card)
+//            hands[1] = split_card
+//            hands[0].add(shoe.remove(0))
+//            hands[1].add(shoe.remove(0))
+//        }
+        show_hand(hand, default_style)
+        dealer_hits(dealers_hand, default_style, dealer_hits_soft17, busted, surrendered, blackjack)
+        running_total = results(dealers_hand, hand, running_total, blackjack, busted, surrendered)
 //        if (accurate_attempts != total_attempts) {
 //            println 'Game Over.'
 //            println 'Your accuracy has fallen below 100%.' + '\7'

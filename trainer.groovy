@@ -10,42 +10,18 @@
 
 def init_game() {
     default_style = "${(char)27}[37;40m"
-    num_decks = 2
+    num_decks = 8
     dealer_hits_soft17 = false
-    double_allowed_after_split = false
-    surrender_allowed = true
+    double_allowed_after_split = true
+    surrender_allowed = false
     running_total = 100.0
     total_attempts = 0
     accurate_attempts = 0
     System.out.print("\033[H\033[2J")
-    println 'House Rules:'
-    printf '1. ' + num_decks + ' deck'
-    if (num_decks > 1) {
-        printf 's'
-    }
-    printf '.\n'
-    printf '2. Dealer '
-    if (dealer_hits_soft17) {
-        printf 'hits'
-    } else {
-        printf 'stands'
-    }
-    printf ' on soft 17.\n'
-    printf '3. Double on any 2 cards. Double '
-    if (!double_allowed_after_split) {
-        printf 'not '
-    }
-    printf 'allowed after split.\n'
-    printf '4. Surrender '
-    if (!surrender_allowed) {
-        printf 'not '
-    }
-    printf 'allowed.\n'
-    println()
-    System.console().readLine '(press any key to continue)'
     System.out.print("\033[H\033[2J")
     System.out.flush()
     println 'You have been awarded 100 free chips!!! Good luck!' + '\7'
+    System.console().readLine '(press any key to continue)'
     return [default_style, running_total, num_decks, dealer_hits_soft17, double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts]
 }
 
@@ -74,6 +50,30 @@ def init_shoe(num_decks) {
 }
 
 def init_wager(running_total, total_attempts, accurate_attempts) {
+    printf 'House Rules: '
+    printf num_decks + ' deck'
+    if (num_decks > 1) {
+        printf 's'
+    }
+    printf '. '
+    printf 'Dealer '
+    if (dealer_hits_soft17) {
+        printf 'hits'
+    } else {
+        printf 'stands'
+    }
+    printf ' on soft 17. '
+    printf 'Double on any 2 cards. Double '
+    if (!double_allowed_after_split) {
+        printf 'not '
+    }
+    printf 'allowed after split. '
+    printf 'Surrender '
+    if (!surrender_allowed) {
+        printf 'not '
+    }
+    printf 'allowed.\n'
+    println()
     if (total_attempts != 0) {
         println 'Accuracy: ' + (100 * (accurate_attempts / total_attempts)).round(1).toString() + '%'
     }
@@ -163,6 +163,8 @@ def show_start(hands, default_style) {
     }
     printf '(' + hands[1][1] + ')'
     printf '\n'
+    //
+    println 'DEBUG: ' + hands
 }
 
 def get_action(hands, hand_index, surrender_allowed) {
@@ -172,7 +174,7 @@ def get_action(hands, hand_index, surrender_allowed) {
         options = ['Press <Enter> to stand or enter H to hit']
         valid_actions = ['', 'H']
         if (hands[hand_index][0].size() == 2) {
-            if (hands[hand_index][4] && double_allowed_after_split || !hands[hand_index][4]) {
+            if (!hands[hand_index][4] || hands[hand_index][4] && double_allowed_after_split) {
                 options.add('D to double')
                 valid_actions.add('D')
             }
@@ -208,108 +210,313 @@ def get_action(hands, hand_index, surrender_allowed) {
     return action
 }
 
-def check_strategy(hands, hand_index, surrender_allowed, action) {
+def check_strategy(hands, hand_index, surrender_allowed, action, num_decks, double_allowed_after_split) {
     correct_strategy = false
     // A,8
-    if (hands[hand_index][2] as Set == ['A','8'] as Set && action == ''.toString()) {
-        rule = 'Always stand on A & 8'
-        correct_strategy = true
+    if (hands[hand_index][2] as Set == ['A','8'] as Set && num_decks == 1) {
+        rule = 'Stand on A & 8 when dealer shows 2-5, or 7 and higher. Double when 6.'
+        if (hands[0][0][1][0][0] in ['2','3','4','5','7','8','9','0','J','Q','K','A'] && action == ''.toString()) {
+            correct_strategy = true
+        }
+        else if (hands[0][0][1][0][0] == '6' && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D') {
+            correct_strategy = true
+        }
     }
     // A,7
     else if (hands[hand_index][2] as Set == ['A','7'] as Set) {
-        if (hands[hand_index][0].size() == 2) {
+        if (num_decks > 1) {
             rule = 'Stand on A & 7 when dealer shows 2, 7, or 8. Double when 3-6. Hit when 9 and higher.'
-        } else {
-            rule = 'Stand on A & 7 when dealer shows 2, 7, or 8. Hit when 3-6, ot 9 and higher.'
-        }
-        if (hands[0][0][1][0][0] in ['2','7','8'] && action == ''.toString()) {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['3','4','5','6']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+            if (hands[0][0][1][0][0] in ['2','7','8'] && action == ''.toString()) {
                 correct_strategy = true
             }
-        }
-        else if (hands[0][0][1][0][0] in ['9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
+            else if (hands[0][0][1][0][0] in ['3','4','5','6'] && action == 'D') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+        } else {
+            rule = 'Stand on A & 7 when dealer shows 2, 7-8, or A. Double when 3-6. Hit when 9-10.'
+            if (hands[0][0][1][0][0] in ['2','7','8','A'] && action == ''.toString()) {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['3','4','5','6'] && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['9','0','J','Q','K'] && action == 'H') {
+                correct_strategy = true
+            }
         }
     }
     // A,6
     else if (hands[hand_index][2] as Set == ['A','6'] as Set) {
-        if (hands[hand_index][0].size() == 2) {
+        if (num_decks > 1) {
             rule = 'Hit on A & 6 when dealer shows 2, or 7 and higher. Double when 3-6.'
+            if (hands[0][0][1][0][0] in ['2','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['3','4','5','6'] && action == 'D') {
+                correct_strategy = true
+            }
         } else {
-            rule = 'Always hit on A & 6.'
-        }
-        if (hands[0][0][1][0][0] in ['2','7','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['3','4','5','6']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+            rule = 'Hit on A & 6 when dealer shows 7 and higher. Double when 2-6.'
+            if (hands[0][0][1][0][0] in ['7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D') {
                 correct_strategy = true
             }
         }
     }
     // A,5
     else if (hands[hand_index][2] as Set == ['A','5'] as Set) {
-        if (hands[hand_index][0].size() == 2) {
-            rule = 'Hit on A & 5 when dealer shows 2, 3, or 7 and higher. Double when 4-6.'
-        } else {
-            rule = 'Always hit on A & 5.'
-        }
+        rule = 'Hit on A & 5 when dealer shows 2, 3, or 7 and higher. Double when 4-6.'
         if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
             correct_strategy = true
         }
-        else if (hands[0][0][1][0][0] in ['4','5','6']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
-                correct_strategy = true
-            }
+        else if (hands[0][0][1][0][0] in ['4','5','6'] && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D') {
+            correct_strategy = true
         }
     }
     // A,4
     else if (hands[hand_index][2] as Set == ['A','4'] as Set) {
-        if (hands[hand_index][0].size() == 2) {
-            rule = 'Hit on A & 4 when dealer shows 2, 3, or 7 and higher. Double when 4-6.'
-        } else {
-            rule = 'Always hit on A & 4.'
-        }
+        rule = 'Hit on A & 4 when dealer shows 2, 3, or 7 and higher. Double when 4-6.'
         if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
             correct_strategy = true
         }
-        else if (hands[0][0][1][0][0] in ['4','5','6']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
-                correct_strategy = true
-            }
+        else if (hands[0][0][1][0][0] in ['4','5','6'] && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D') {
+            correct_strategy = true
         }
     }
     // A,3
     else if (hands[hand_index][2] as Set == ['A','3'] as Set) {
-        if (hands[hand_index][0].size() == 2) {
+        if (num_decks > 1) {
             rule = 'Hit on A & 3 when dealer shows 2-4, or 7 and higher. Double when 5 or 6.'
+            if (hands[0][0][1][0][0] in ['2','3','4','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['5','6'] && action == 'D') {
+                correct_strategy = true
+            }
         } else {
-            rule = 'Always hit on A & 3.'
-        }
-        if (hands[0][0][1][0][0] in ['2','3','4','7','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['5','6']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+            rule = 'Hit on A & 3 when dealer shows 2-3, or 7 and higher. Double when 4-6.'
+            if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['4','5','6'] && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D') {
                 correct_strategy = true
             }
         }
     }
     // A,2
     else if (hands[hand_index][2] as Set == ['A','2'] as Set) {
-        if (hands[hand_index][0].size() == 2) {
+        if (num_decks > 1) {
             rule = 'Hit on A & 2 when dealer shows 2-4, or 7 and higher. Double when 5 or 6.'
-        } else {
-            rule = 'Always hit on A & 2.'
-        }
-        if (hands[0][0][1][0][0] in ['2', '3', '4', '7', '8', '9', '0', 'J', 'Q', 'K', 'A'] && action == 'H') {
-            correct_strategy = true
-        } else if (hands[0][0][1][0][0] in ['5', '6']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+            if (hands[0][0][1][0][0] in ['2','3','4','7','8','9','0','J','Q','K','A'] && action == 'H') {
                 correct_strategy = true
+            } else if (hands[0][0][1][0][0] in ['5','6'] && action == 'D') {
+                correct_strategy = true
+            }
+        } else {
+            rule = 'Hit on A & 2 when dealer shows 2-3, or 7 and higher. Double when 4-6.'
+            if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            } else if (hands[0][0][1][0][0] in ['4','5','6'] && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D') {
+                correct_strategy = true
+            }
+        }
+    }
+    // 16
+    else if (hands[hand_index][1] == 16) {
+        if (num_decks > 1) {
+            if (surrender_allowed) {
+                rule = 'Stand on 16 when dealer shows 2-6. Hit when 7-8. Surrender when 9 or more.'
+            } else {
+                rule = 'Stand on 16 when dealer shows 2-6. Hit when 7 or more.'
+            }
+            if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['7','8'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['9','0','J','Q','K','A'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
+                correct_strategy = true
+            }
+        } else {
+            if (double_allowed_after_split) {
+                if (surrender_allowed) {
+                    rule = 'Stand on 16 when dealer shows 2-6. Hit when 7-9, or A. Surrender when 10.'
+                } else {
+                    rule = 'Stand on 16 when dealer shows 2-6. Hit when 7 or more.'
+                }
+                if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['7','8','9','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['0','J','Q','K'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
+                    correct_strategy = true
+                }
+            } else {
+                if (surrender_allowed) {
+                    rule = 'Stand on 16 when dealer shows 2-6. Hit when 7-9. Surrender when 10 or more.'
+                } else {
+                    rule = 'Stand on 16 when dealer shows 2-6. Hit when 7 or more.'
+                }
+                if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['7','8','9'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['0','J','Q','K','A'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
+                    correct_strategy = true
+                }
+
+            }
+        }
+    }
+    // 15
+    else if (hands[hand_index][1] == 15) {
+        if (surrender_allowed) {
+            rule = 'Stand on 15 when dealer shows 2-6. Hit when 7-9 or A. Surrender when 10-K.'
+        } else {
+            rule = 'Stand on 15 when dealer shows 2-6. Hit when 7 or more.'
+        }
+        if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
+            correct_strategy = true
+        }
+        else if (hands[0][0][1][0][0] in ['7','8','9','A'] && action == 'H') {
+            correct_strategy = true
+        }
+        else if (hands[0][0][1][0][0] in ['0','J','Q','K'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
+            correct_strategy = true
+        }
+    }
+    // 13,14
+    else if (hands[hand_index][1] in [13,14]) {
+        rule = 'Stand on 13 or 14 when dealer shows 2-6. Hit when 7 or more.'
+        if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
+            correct_strategy = true
+        }
+        else if (hands[0][0][1][0][0] in ['7','8','9','0','J','Q','K','A'] && action == 'H') {
+            correct_strategy = true
+        }
+    }
+    // 12
+    else if (hands[hand_index][1] == 12) {
+        rule = 'Hit on 12 when dealer shows 2-3, or 7 or more. Stand when 4-6.'
+        if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
+            correct_strategy = true
+        }
+        else if (hands[0][0][1][0][0] in ['4','5','6'] && action == ''.toString()) {
+            correct_strategy = true
+        }
+    }
+    // 11
+    else if (hands[hand_index][1] == 11) {
+        if (num_decks > 1) {
+            if (hands[hand_index][0].size() == 2) {
+                rule = 'Double on 11 when dealer shows 2-K. Hit when A.'
+            } else {
+                rule = 'Always hit on 11.'
+            }
+            if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9','0','J','Q','K']) {
+                if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+                    correct_strategy = true
+                }
+            }
+            else if (hands[0][0][1][0][0] == 'A' && action == 'H') {
+                correct_strategy = true
+            }
+        } else {
+            if (hands[hand_index][0].size() == 2) {
+                rule = 'Always double on 11.'
+            } else {
+                rule = 'Always hit on 11.'
+            }
+            if (hands[hand_index][0].size() == 2 && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+                correct_strategy = true
+            }
+        }
+    }
+    // 10
+    else if (hands[hand_index][1] == 10) {
+        if (hands[hand_index][0].size() == 2) {
+            rule = 'Double on 10 when dealer shows 2-9. Hit when 10 or more.'
+        } else {
+            rule = 'Always hit on 10.'
+        }
+        if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9']) {
+            if (hands[hand_index][0].size() == 2 && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split)) && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+                correct_strategy = true
+            }
+        }
+        else if (hands[0][0][1][0][0] in ['0','J','Q','K','A'] && action == 'H') {
+            correct_strategy = true
+        }
+    }
+    // 9
+    else if (hands[hand_index][1] == 9) {
+        if (num_decks > 1) {
+            if (hands[hand_index][0].size() == 2) {
+                rule = 'Hit on 9 when dealer shows 2, or 7 or more. Double when 3-6.'
+            } else {
+                rule = 'Always hit on 9.'
+            }
+            if (hands[0][0][1][0][0] in ['2','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['3','4','5','6']) {
+                if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+                    correct_strategy = true
+                }
+            }
+        } else {
+            if (hands[hand_index][0].size() == 2) {
+                rule = 'Double on 9 when dealer shows 2-6. Hit when 7 or more.'
+            } else {
+                rule = 'Always hit on 9.'
+            }
+            if (hands[0][0][1][0][0] in ['7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['2','3','4','5','6']) {
+                if (hands[hand_index][0].size() == 2 && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split))  && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+                    correct_strategy = true
+                }
+            }
+        }
+    }
+    // 8 or less
+    else if (hands[hand_index][1] <= 8) {
+        if (num_decks > 1) {
+            rule = 'Always hit on 8 or less.'
+            if (action == 'H') {
+                correct_strategy = true
+            }
+        } else {
+            if (hands[hand_index][1] == 8) {
+                if (hands[hand_index][0].size() == 2) {
+                    rule = 'Hit on 8 when dealer shows 2-4, or 7 or more. Double when 5-6.'
+                } else {
+                    rule = 'Always hit on 8 or less.'
+                }
+                if (hands[0][0][1][0][0] in ['2','3','4','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['5','6']) {
+                    if (hands[hand_index][0].size() == 2 && (!hands[hand_index][4] || (hands[hand_index][4] && double_allowed_after_split))  && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
+                        correct_strategy = true
+                    }
+                }
+            } else {
+                rule = 'Always hit on 7 or less.'
+                if (action == 'H') {
+                    correct_strategy = true
+                }
             }
         }
     }
@@ -320,7 +527,7 @@ def check_strategy(hands, hand_index, surrender_allowed, action) {
     }
     // 9,9
     else if (hands[hand_index][2] == ['9','9']) {
-        rule = 'Split on 9 & 9 when dealer shows 2-6, or 8-9. Stand when 7, or 10 or higher.'
+        rule = 'Split on 9 & 9 when dealer shows 2-6, or 8-9. Stand when 7, or 10 or more.'
         if (hands[0][0][1][0][0] in ['2','3','4','5','6','8','9'] && action == 'S') {
             correct_strategy = true
         }
@@ -335,173 +542,190 @@ def check_strategy(hands, hand_index, surrender_allowed, action) {
     }
     // 7,7
     else if (hands[hand_index][2] == ['7','7']) {
-        rule = 'Split on 7 & 7 when dealer shows 2-7. Hit when 8 or higher.'
-        if (hands[0][0][1][0][0] in ['2','3','4','5','6','7'] &&  action == 'S') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
+        if (num_decks > 1 || (num_decks ==1 && !double_allowed_after_split)) {
+            rule = 'Split on 7 & 7 when dealer shows 2-7. Hit when 8 or more.'
+            if (hands[0][0][1][0][0] in ['2','3','4','5','6','7'] &&  action == 'S') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['8','9','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['0','J','Q','K'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
+                correct_strategy = true
+            }
+        } else {
+            if (surrender_allowed) {
+                rule = 'Split on 7 & 7 when dealer shows 2-8. Hit when 9 or A. Surrender when 10-K.'
+            } else {
+                rule = 'Split on 7 & 7 when dealer shows 2-8. Hit when 9 or A. Stand when 10-K.'
+            }
+            if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8'] &&  action == 'S') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['9','A'] && action == 'H') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['0','J','Q','K'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
+                correct_strategy = true
+            }
         }
     }
     // 6,6
     else if (hands[hand_index][2] == ['6','6']) {
-        rule = 'Split on 6 & 6 when dealer shows 3-6. Hit when 2, or 7 or higher.'
-        if (hands[0][0][1][0][0] in ['3','4','5','6'] && action == 'S') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['2','7','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-    }
-    // 4,4
-    else if (hands[hand_index][2] == ['4','4'] && action == 'H') {
-        rule = 'Always hit on 4 & 4.'
-        correct_strategy = true
-    }
-    // 3,3
-    else if (hands[hand_index][2] == ['3','3']) {
-        rule = 'Hit on 3 & 3 when dealer shows 2-3, or 8 or higher. Split when 4-7.'
-        if (hands[0][0][1][0][0] in ['2','3','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['4','5','6','7'] && action == 'S') {
-            correct_strategy = true
-        }
-    }
-    // 2,2
-    else if (hands[hand_index][2] == ['2','2']) {
-        rule = 'Hit on 2 & 2 when dealer shows 2-3, or 8 or higher. Split when 4-7.'
-        if (hands[0][0][1][0][0] in ['2','3','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['4','5','6','7'] && action == 'S') {
-            correct_strategy = true
-        }
-    }
-    // hard 17 or more
-    else if (hands[hand_index][1] >= 17) {
-        if (hands[hand_index][2] in [['0','0'],['J','J'],['Q','Q'],['K','K']]) {
-            rule = 'Always stand on 17 or higher (including pairs of 10, J, Q, or K).'
+        if (num_decks > 1) {
+        rule = 'Split on 6 & 6 when dealer shows 3-6. Hit when 2, or 7 or more.'
+            if (hands[0][0][1][0][0] in ['3','4','5','6'] && action == 'S') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['2','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
         } else {
-            if (!hands[hand_index][3]) {
-                rule = 'Always stand on 17 or higher.'
+            if (double_allowed_after_split) {
+                rule = 'Split on 6 & 6 when dealer shows 2-7. Hit when 8 or more.'
+                if (hands[0][0][1][0][0] in ['2','3','4','5','6','7'] && action == 'S') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
             } else {
-                rule = 'Always hit on soft 17 or higher.'
+                rule = 'Split on 6 & 6 when dealer shows 2-6. Hit when 7 or more.'
+                if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == 'S') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['7','8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
             }
         }
-        if (hands[hand_index][3] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (!hands[hand_index][3] && action == ''.toString()) {
-            correct_strategy = true
-        }
     }
-    // 16
-    else if (hands[hand_index][1] == 16) {
-        if (surrender_allowed) {
-            rule = 'Stand on 16 when dealer shows 2-6. Hit when 7-8. Surrender when 9 or higher.'
-        } else {
-            rule = 'Stand on 16 when dealer shows 2-6. Hit when 7 or higher.'
-        }
-        if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
+    // 5,5
+    else if (hands[hand_index][2] == ['5','5'] && num_decks > 1 && double_allowed_after_split) {
+        rule = 'Double on 5 & 5 when dealer shows 2-9. Hit when 10 or more.'
+        if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9'] && action == 'D') {
             correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['7','8'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['9','0','J','Q','K','A'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
-            correct_strategy = true
-        }
-    }
-    // 15
-    else if (hands[hand_index][1] == 15) {
-        if (surrender_allowed) {
-            rule = 'Stand on 15 when dealer shows 2-6. Hit when 7-9 or A. Surrender when 10-K.'
-        } else {
-            rule = 'Stand on 15 when dealer shows 2-6. Hit when 7 or higher.'
-        }
-        if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['7','8','9','A'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['0','J','Q','K'] && ((surrender_allowed && action == 'Q') || (!surrender_allowed && action == 'H'))) {
-            correct_strategy = true
-        }
-    }
-    // 13,14
-    else if (hands[hand_index][1] in [13,14]) {
-        rule = 'Stand on 13 or 14 when dealer shows 2-6. Hit when 7 or higher.'
-        if (hands[0][0][1][0][0] in ['2','3','4','5','6'] && action == ''.toString()) {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['7','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-    }
-    // 12
-    else if (hands[hand_index][1] == 12) {
-        rule = 'Hit on 12 when dealer shows 2-3, or 7 or higher. Stand when 4-6.'
-        if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['4','5','6'] && action == ''.toString()) {
-            correct_strategy = true
-        }
-    }
-    // 11
-    else if (hands[hand_index][1] == 11) {
-        if (hands[hand_index][0].size() == 2) {
-            rule = 'Double on 11 when dealer shows 2-K. Hit when A.'
-        } else {
-            rule = 'Always hit on 11.'
-        }
-        if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9','0','J','Q','K']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
-                correct_strategy = true
-            }
-        }
-        else if (hands[0][0][1][0][0] == 'A' && action == 'H') {
-            correct_strategy = true
-        }
-    }
-    // 10
-    else if (hands[hand_index][1] == 10) {
-        if (hands[hand_index][0].size() == 2) {
-            rule = 'Double on 10 when dealer shows 2-9. Hit when 10 or higher.'
-        } else {
-            rule = 'Always hit on 10.'
-        }
-        if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
-                correct_strategy = true
-            }
         }
         else if (hands[0][0][1][0][0] in ['0','J','Q','K','A'] && action == 'H') {
             correct_strategy = true
         }
     }
-    // 9
-    else if (hands[hand_index][1] == 9) {
-        if (hands[hand_index][0].size() == 2) {
-            rule = 'Hit on 9 when dealer shows 2, or 7 or higher. Double when 3-6.'
+    // 4,4
+    else if (hands[hand_index][2] == ['4','4']) {
+        if (num_decks > 1) {
+            if (double_allowed_after_split) {
+                rule = 'Hit on 4 & 4 when dealer shows 2-4, or 7 or more. Split when 5 or 6'
+                if (hands[0][0][1][0][0] in ['2','3','4','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['5','6'] && action == 'S') {
+                    correct_strategy = true
+                }
+            } else {
+                rule = 'Always hit on 4 & 4.'
+                if (action == 'H') {
+                    correct_strategy = true
+                }
+            }
         } else {
-            rule = 'Always hit on 9.'
-        }
-        if (hands[0][0][1][0][0] in ['2','7','8','9','0','J','Q','K','A'] && action == 'H') {
-            correct_strategy = true
-        }
-        else if (hands[0][0][1][0][0] in ['3','4','5','6']) {
-            if (hands[hand_index][0].size() == 2 && action == 'D' || hands[hand_index][0].size() > 2 && action == 'H') {
-                correct_strategy = true
+            if (double_allowed_after_split) {
+                rule = 'Hit on 4 & 4 when dealer shows 2-3, or 7 or more.'
+                if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['4','5','6'] && action == 'S') {
+                    correct_strategy = true
+                }
             }
         }
     }
-    // 8 or less
-    else if (hands[hand_index][1] <= 8 && action == 'H') {
-        rule = 'Always hit on 8 or less.'
-        correct_strategy = true
+    // 3,3
+    else if (hands[hand_index][2] == ['3','3']) {
+        if (num_decks > 1) {
+            rule = 'Split on 3 & 3 when dealer shows 2-7. Hit when 8 or more.'
+            if (hands[0][0][1][0][0] in ['2','3','4','5','6','7'] && action == 'S') {
+                correct_strategy = true
+            }
+            else if (hands[0][0][1][0][0] in ['8','9','0','J','Q','K','A'] && action == 'H') {
+                correct_strategy = true
+            }
+        } else {
+            if (double_allowed_after_split) {
+                rule = 'Split on 3 & 3 when dealer shows 2-8. Hit when 9 or more.'
+                if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8'] && action == 'S') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+            } else {
+                rule = 'Hit on 3 & 3 when dealer shows 2-3, or 8 or more. Split when 4-7.'
+                if (hands[0][0][1][0][0] in ['2','3','8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['4','5','6','7'] && action == 'S') {
+                    correct_strategy = true
+                }
+            }
+        }
+    }
+    // 2,2
+    else if (hands[hand_index][2] == ['2','2']) {
+        if (double_allowed_after_split) {
+            if (num_decks > 1) {
+                rule = 'Split on 2 & 2 when dealer shows 2-7. Hit when 8 or more.'
+                if (hands[0][0][1][0][0] in ['2','3','4','5','6','7'] && action == 'S') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+            } else {
+                rule = 'Split on 2 & 2 when dealer shows 2, or 4-8. Hit when 3, or 8 or more.'
+                if (hands[0][0][1][0][0] in ['2','4','5','6','7','8'] && action == 'S') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['3','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+            }
+        } else {
+            if (num_decks > 1) {
+                rule = 'Hit on 2 & 2 when dealer shows 2-3, or 8 or more. Split when 4-7.'
+                if (hands[0][0][1][0][0] in ['2','3','8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['4','5','6','7'] && action == 'S') {
+                    correct_strategy = true
+                }
+            } else {
+                rule = 'Hit on 2 & 2 when dealer shows 2, or 8 or more. Split when 3-7.'
+                if (hands[0][0][1][0][0] in ['2','8','9','0','J','Q','K','A'] && action == 'H') {
+                    correct_strategy = true
+                }
+                else if (hands[0][0][1][0][0] in ['3','4','5','6','7'] && action == 'S') {
+                    correct_strategy = true
+                }
+            }
+        }
+    }
+    // hard 17 or more, soft 19 or more
+    else if (hands[hand_index][1] >= 17) {
+        if (!hands[hand_index][3]) {
+            if (hands[hand_index][1] >= 17 && action == ''.toString()) {
+                rule = 'Always stand on hard 17 or more.'
+                correct_strategy = true
+            }
+        } else {
+            if (hands[hand_index][1] in [17,18] && action == 'H') {
+                rule = 'Always hit on soft 17 or soft 18.'
+                correct_strategy = true
+            }
+            else if (hands[hand_index][1] >= 19 && action == ''.toString()) {
+                rule = 'Always stand on soft 19 or more.'
+                correct_strategy = true
+            }
+        }
     }
     return [correct_strategy, rule]
 }
@@ -587,6 +811,8 @@ def show_hand(hands, default_style) {
     }
     printf '(' + hands[hand_index][1] + ')'
     printf '\n'
+    //
+    println 'DEBUG: ' + hands
 }
 
 def show_dealers_hand(hands, default_style) {
@@ -598,6 +824,8 @@ def show_dealers_hand(hands, default_style) {
     }
     printf '(' + hands[0][1] + ')'
     printf '\n'
+    //
+    println 'DEBUG: ' + hands
 }
 
 def dealer_hits(hands, default_style, dealer_hits_soft17,busted, surrendered, blackjack, cut_card_drawn) {
@@ -628,7 +856,7 @@ def reaction(hands, cut_card_drawn, action) {
         }
         println()
     } else {
-        (correct_strategy, rule) = check_strategy(hands, hand_index, surrender_allowed, action)
+        (correct_strategy, rule) = check_strategy(hands, hand_index, surrender_allowed, action, num_decks, double_allowed_after_split)
         total_attempts += 1
         if (correct_strategy) {
             accurate_attempts += 1
@@ -720,20 +948,20 @@ def mainMethod() {
                 (hands, cut_card_drawn, blackjack, surrendered, busted) = reaction(hands, cut_card_drawn, action)
             }
             hands_played += 1
-            cut_card_drawn = dealer_hits(hands, default_style, dealer_hits_soft17, busted, surrendered, blackjack, cut_card_drawn)
-            running_total = results(hands, running_total, blackjack, busted, surrendered)
             if (hands[hand_index][4]) {
                 hand_index += 1
                 println 'Same player shoot again!' + '\7'
                 show_hand(hands, default_style)
             }
         }
+        cut_card_drawn = dealer_hits(hands, default_style, dealer_hits_soft17, busted, surrendered, blackjack, cut_card_drawn)
+        running_total = results(hands, running_total, blackjack, busted, surrendered)
         wager = original_wager
-        //        if (accurate_attempts != total_attempts) {
-        //            println 'Game Over.'
-        //            println 'Your accuracy has fallen below 100%.' + '\7'
-        play_again = end_of_game(play_again, running_total)
-        //        }
+        if (accurate_attempts != total_attempts) {
+            println 'Game Over.'
+            println 'Your accuracy has fallen below 100%.' + '\7'
+            play_again = end_of_game(play_again, running_total)
+        }
     }
 }
 

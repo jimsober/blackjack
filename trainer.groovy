@@ -10,14 +10,13 @@
 
 def init_game() {
     default_style = "${(char)27}[37;40m"
-    num_decks = 8
+    num_decks = 1
     dealer_hits_soft17 = false
     double_allowed_after_split = true
     surrender_allowed = false
     running_total = 100.0
     total_attempts = 0
     accurate_attempts = 0
-    System.out.print("\033[H\033[2J")
     System.out.print("\033[H\033[2J")
     System.out.flush()
     println 'You have been awarded 100 free chips!!! Good luck!' + '\7'
@@ -50,6 +49,8 @@ def init_shoe(num_decks) {
 }
 
 def init_wager(running_total, total_attempts, accurate_attempts) {
+    //System.out.print("\033[H\033[2J")
+    System.out.flush()
     printf 'House Rules: '
     printf num_decks + ' deck'
     if (num_decks > 1) {
@@ -161,10 +162,12 @@ def show_start(hands, default_style) {
         printf style+card[0]
         printf default_style+' '
     }
-    printf '(' + hands[1][1] + ')'
+    printf '('
+    if (hands[hand_index][3]) {
+        printf 'soft '
+    }
+    printf hands[1][1] + ')'
     printf '\n'
-    //
-    println 'DEBUG: ' + hands
 }
 
 def get_action(hands, hand_index, surrender_allowed) {
@@ -809,10 +812,12 @@ def show_hand(hands, default_style) {
         printf style+card[0]
         printf default_style+' '
     }
-    printf '(' + hands[hand_index][1] + ')'
+    printf '('
+    if (hands[hand_index][3]) {
+        printf 'soft '
+    }
+    printf hands[1][1] + ')'
     printf '\n'
-    //
-    println 'DEBUG: ' + hands
 }
 
 def show_dealers_hand(hands, default_style) {
@@ -822,10 +827,12 @@ def show_dealers_hand(hands, default_style) {
         printf style+card[0]
         printf default_style+' '
     }
-    printf '(' + hands[0][1] + ')'
+    printf '('
+    if (hands[0][3]) {
+        printf 'soft '
+    }
+    printf hands[0][1] + ')'
     printf '\n'
-    //
-    println 'DEBUG: ' + hands
 }
 
 def dealer_hits(hands, default_style, dealer_hits_soft17,busted, surrendered, blackjack, cut_card_drawn) {
@@ -889,12 +896,19 @@ def reaction(hands, cut_card_drawn, action) {
     return [hands, cut_card_drawn, blackjack, surrendered, busted]
 }
 
-def end_of_game(play_again, running_total) {
-    play_again = false
-    println 'Game Over.'
+def show_outcome() {
     if (running_total == 0) {
         println 'You leave with nothing. Play again if you dare!'
     }
+    else if (running_total > 0) {
+        println 'Credit balance of $' + String.format("%.2f", running_total) + '. Cash dispensed below.'
+    } else {
+        println 'Balance due $' + String.format("%.2f", running_total) + '. Insert credit card below.'
+    }
+}
+
+def end_of_game(play_again, running_total) {
+    println 'Game Over.'
     again_input_err = true
     while (again_input_err) {
         again_yn = System.console().readLine 'Press <Enter> to play again or enter Q to quit: '
@@ -906,11 +920,8 @@ def end_of_game(play_again, running_total) {
         }
         else if (again_yn.toUpperCase() == 'Q') {
             again_input_err = false
-            if (running_total > 0) {
-                println 'Credit balance of $' + String.format("%.2f", running_total) + '. Cash dispensed below.'
-            } else {
-                 println 'Balance due $' + String.format("%.2f", running_total) + '. Insert credit card below.'
-            }
+            play_again = false
+            show_outcome()
         } else {
             println 'Try again. ' + '\7'
         }
@@ -960,6 +971,10 @@ def mainMethod() {
         if (accurate_attempts != total_attempts) {
             println 'Game Over.'
             println 'Your accuracy has fallen below 100%.' + '\7'
+            again_input_err = false
+            play_again = false
+            show_outcome()
+        } else {
             play_again = end_of_game(play_again, running_total)
         }
     }

@@ -1000,10 +1000,9 @@ def reaction(hands, cut_card_drawn, action) {
     if (action == 'A') {
         if (hands[hand_index][0].size() == 2) {
             hands[hand_index][4] = true
-            println 'Blackjack!' + '\7'
+            println 'Blackjack!'
         }
         println '\7'
-        println()
         sleep(1000)
     } else {
         (correct_strategy, rule) = check_strategy(hands, hand_index, surrender_allowed, action, num_decks, double_allowed_after_split)
@@ -1054,7 +1053,7 @@ def show_outcome() {
 }
 
 def end_of_game(play_again, running_total) {
-    println 'Game Over.'
+    println 'Game over.'
     again_input_err = true
     if (running_total.intValue() != 0) {
         while (again_input_err) {
@@ -1128,11 +1127,9 @@ def mainMethod() {
         cut_card_drawn = dealer_hits(hands, default_style, dealer_stands_soft17, cut_card_drawn)
         running_total = results(hands, running_total)
         if (accurate_attempts != total_attempts) {
-            println 'Game Over.'
-            printf 'Your accuracy has fallen below 100%.'
+            println 'Game over.'
             double_tap()
-            println()
-            again_input_err = false
+            println 'Your accuracy has fallen below 100%.'
             play_again = false
             show_outcome()
         } else {

@@ -950,7 +950,11 @@ def results(hands, running_total) {
 }
 
 def show_hand(hands, default_style) {
-    printf 'Your Hand: '
+    if (hands.size() > 2) {
+        printf 'Your Hand ' + hand_index +': '
+    } else {
+        printf 'Your Hand: '
+    }
     for (card in hands[hand_index][0]) {
         style = colorize(card[0])
         printf style+card[0]
@@ -962,6 +966,9 @@ def show_hand(hands, default_style) {
     }
     printf hands[hand_index][1] + ')'
     printf '\n'
+    if (hands.size() > 2) {
+        println()
+    }
 }
 
 def show_dealers_hand(hands, default_style) {
@@ -1118,9 +1125,6 @@ def mainMethod() {
             hands_played += 1
             if (hands[hand_index][7]) {
                 hand_index += 1
-                println()
-                println 'Same player shoot again!' + '\7'
-                println()
                 show_hand(hands, default_style)
             }
         }

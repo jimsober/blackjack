@@ -225,7 +225,7 @@ def get_action(hands, hand_index, surrender_allowed) {
         while (action_err) {
             action = System.console().readLine prompt
             action = action.trim().toUpperCase()
-            if (action in valid_actions) {
+            if (action in valid_actions || action == '?') {
                 action_err = false
             } else {
                 println 'Invalid entry. Try again.'
@@ -1011,6 +1011,10 @@ def reaction(hands, cut_card_drawn, action) {
         }
         println '\7'
         sleep(1000)
+    }
+    else if (action == '?') {
+        (correct_strategy, rule) = check_strategy(hands, hand_index, surrender_allowed, action, num_decks, double_allowed_after_split)
+        println rule
     } else {
         (correct_strategy, rule) = check_strategy(hands, hand_index, surrender_allowed, action, num_decks, double_allowed_after_split)
         total_attempts += 1

@@ -394,7 +394,7 @@ def check_strategy(hands, hand_index, surrender_allowed, action, num_decks, doub
     }
     // A,A
     else if (hands[hand_index][2] == ['A','A'] && running_total - wager_total - hands[hand_index][8] >= 0 \
-      && action == 'S') {
+      && (action == 'S' || action == '?')) {
             rule = 'Always split on A & A.'
             correct_strategy = true
     }
@@ -410,7 +410,7 @@ def check_strategy(hands, hand_index, surrender_allowed, action, num_decks, doub
     }
     // 8,8
     else if (hands[hand_index][2] == ['8','8'] && running_total - wager_total - hands[hand_index][8] >= 0 \
-      && action == 'S') {
+      && (action == 'S' || action == '?')) {
         rule = 'Always split on 8 & 8.'
         correct_strategy = true
     }
@@ -593,16 +593,16 @@ def check_strategy(hands, hand_index, surrender_allowed, action, num_decks, doub
     // hard 17 or more, soft 19 or more
     else if (hands[hand_index][1] >= 17) {
         if (!hands[hand_index][3]) {
-            if (hands[hand_index][1] >= 17 && action == ''.toString()) {
+            if (hands[hand_index][1] >= 17 && (action == ''.toString() || action == '?')) {
                 rule = 'Always stand on hard 17 or higher.'
                 correct_strategy = true
             }
         } else {
-            if (hands[hand_index][1] in [17,18] && action == 'H') {
+            if (hands[hand_index][1] in [17,18] && (action == 'H' || action == '?')) {
                 rule = 'Always hit on soft 17 or soft 18.'
                 correct_strategy = true
             }
-            else if (hands[hand_index][1] >= 19 && action == ''.toString()) {
+            else if (hands[hand_index][1] >= 19 && (action == ''.toString() || action == '?')) {
                 rule = 'Always stand on soft 19 or higher.'
                 correct_strategy = true
             }

@@ -17,13 +17,17 @@ def init_game() {
     running_total = 20.0
     total_attempts = 0
     accurate_attempts = 0
+    hands_won = 0
+    hands_push = 0
+    hands_lost = 0
+    hands_surrender = 0
     System.out.print("\033[H\033[2J")
     System.out.flush()
     println 'You have been awarded ' + running_total.intValue() + ' free chips!!! Good luck!' + '\7'
     System.console().readLine 'Press <Enter> to continue: '
     System.out.print("\033[H\033[2J")
     System.out.flush()
-    return [default_style, running_total, num_decks, dealer_stands_soft17, double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts]
+    return [default_style, running_total, num_decks, dealer_stands_soft17, double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts, hands_won, hands_push, hands_lost, hands_surrender]
 }
 
 def init_shoe(num_decks) {
@@ -913,6 +917,7 @@ def results(hands, running_total) {
             printf 'Hand ' + i +': '
         }
         if ((hands[0][1] > 21 || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6])) {
+            hands_won += 1
             printf 'Winner!!!' + '\7'
             if (hands[i][4]) {
                 running_total += (hands[i][8] * 1.5).round(2)
@@ -923,11 +928,13 @@ def results(hands, running_total) {
             }
         }
         else if (hands[i][5]) {
+            hands_surrender += 1
             printf 'Your wager has been split with the house.'
             running_total -= (hands[i][8] / 2).round(2)
             proceeds -= (hands[i][8] / 2).round(2)
         }
         else if (hands[0][1] > hands[i][1] || hands[i][6]) {
+            hands_lost += 1
             printf 'The house wins.'
             if (!hands[i][6]) {
                 double_tap()
@@ -936,6 +943,7 @@ def results(hands, running_total) {
             proceeds -= hands[i][8]
         }
         else if (hands[0][1] == hands[i][1]) {
+            hands_push += 1
             printf 'Push'
         }
         println()
@@ -1063,6 +1071,10 @@ def reaction(hands, cut_card_drawn, action) {
 }
 
 def show_outcome() {
+    println 'Hands won: ' + hands_won
+    println 'Hands pushed: ' + hands_push
+    println 'Hands lost: ' + hands_lost
+    println 'Hands surrendered: ' + hands_surrender
     if (running_total == 0) {
         println 'You leave with nothing. Play again if you dare!'
     }
@@ -1117,7 +1129,7 @@ def double_tap() {
 }
 
 def mainMethod() {
-    (default_style, running_total, num_decks, dealer_stands_soft17, double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts) = init_game()
+    (default_style, running_total, num_decks, dealer_stands_soft17, double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts, hands_won, hands_push, hands_lost, hands_surrender) = init_game()
     (shoe, cut_card_drawn) = init_shoe(num_decks)
     play_again = true
 

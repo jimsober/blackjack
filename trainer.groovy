@@ -1077,7 +1077,9 @@ def show_outcome() {
     println 'Hands won: ' + hands_won
     println 'Hands pushed: ' + hands_push
     println 'Hands lost: ' + hands_lost
-    println 'Hands surrendered: ' + hands_surrender
+    if (surrender_allowed) {
+        println 'Hands surrendered: ' + hands_surrender
+    }
     if (running_total == 0) {
         println 'You leave with nothing. Play again if you dare!'
     }

@@ -158,7 +158,6 @@ def deal_card(hand) {
     } else {
         hand.add(drawn_card)
     }
-    //get_hand_info()
     return cut_card_drawn
 }
 

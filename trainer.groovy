@@ -597,22 +597,21 @@ def check_strategy() {
             }
         }
     }
-    // hard 17 or more, soft 19 or more
-    else if (hands[hands_index][1] >= 17) {
-        if (!hands[hands_index][3]) {
-            if (hands[hands_index][1] >= 17 && (action == ''.toString() || action == '?')) {
-                rule = 'Always stand on hard 17 or higher.'
-                correct_strategy = true
-            }
-        } else {
-            if (hands[hands_index][1] in [17,18] && (action == 'H' || action == '?')) {
-                rule = 'Always hit on soft 17 or soft 18.'
-                correct_strategy = true
-            }
-            else if (hands[hands_index][1] >= 19 && (action == ''.toString() || action == '?')) {
-                rule = 'Always stand on soft 19 or higher.'
-                correct_strategy = true
-            }
+    // soft 19 or more
+    else if (hands[hands_index][1] >= 19 && hands[hands_index][3] && (action == ''.toString() || action == '?')) {
+        rule = 'Always stand on soft 19 or higher.'
+        correct_strategy = true
+    }
+    // soft 17 or soft 18
+    else if (hands[hands_index][1] in [17,18] && hands[hands_index][3] && (action == 'H' || action == '?')) {
+        rule = 'Always hit on soft 17 or soft 18.'
+        correct_strategy = true
+    }
+    // hard 17 or more
+    else if (hands[hands_index][1] >= 17 && !hands[hands_index][3]) {
+        if (hands[hands_index][1] >= 17 && (action == ''.toString() || action == '?')) {
+            rule = 'Always stand on hard 17 or higher.'
+            correct_strategy = true
         }
     }
     // 16

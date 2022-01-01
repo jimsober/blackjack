@@ -917,9 +917,9 @@ def results() {
         if (hands.size() > 2) {
             printf 'Hand ' + i +': '
         }
-        if ((hands[0][1] > 21 || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6])) {
+        if (((hands[0][1] > 21 && !hands[i][6]) || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6])) {
             hands_won += 1
-            printf 'Winner!!!' + '\7'
+            printf 'Winner! :)' + '\7'
             if (hands[i][4]) {
                 running_total += (hands[i][8] * 1.5).round(2)
                 proceeds += (hands[i][8] * 1.5).round(2)
@@ -934,18 +934,18 @@ def results() {
             running_total -= (hands[i][8] / 2).round(2)
             proceeds -= (hands[i][8] / 2).round(2)
         }
-        else if (hands[0][1] > hands[i][1] || hands[i][6]) {
+        else if (hands[0][1] > hands[i][1] || (hands[0][1] <= 21 && hands[i][6])) {
             hands_lost += 1
-            printf 'The house wins.'
+            printf 'The house wins. :('
             if (!hands[i][6]) {
                 double_tap()
             }
             running_total -= hands[i][8]
             proceeds -= hands[i][8]
         }
-        else if (hands[0][1] == hands[i][1]) {
+        else if (hands[0][1] == hands[i][1] || (hands[0][1] > 21 && hands[i][6])) {
             hands_push += 1
-            printf 'Push'
+            printf 'Push. :|'
         }
         println()
         sleep(500)
@@ -1072,9 +1072,6 @@ def reaction() {
 }
 
 def show_outcome() {
-    println 'Hands won: ' + hands_won
-    println 'Hands pushed: ' + hands_push
-    println 'Hands lost: ' + hands_lost
     if (surrender_allowed) {
         println 'Hands surrendered: ' + hands_surrender
     }
@@ -1163,6 +1160,9 @@ def mainMethod() {
         }
         cut_card_drawn = dealer_hits()
         running_total = results()
+        println 'Hands won: ' + hands_won
+        println 'Hands pushed: ' + hands_push
+        println 'Hands lost: ' + hands_lost
         if (accurate_attempts != total_attempts) {
             println 'Game over.'
             double_tap()

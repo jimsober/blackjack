@@ -917,7 +917,7 @@ def results() {
         if (hands.size() > 2) {
             printf 'Hand ' + i +': '
         }
-        if (((hands[0][1] > 21 && !hands[i][6]) || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6])) {
+        if ((hands[0][1] > 21 && !hands[i][6]) || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6]) {
             hands_won += 1
             printf 'Winner! :)' + '\7'
             if (hands[i][4]) {
@@ -934,7 +934,7 @@ def results() {
             running_total -= (hands[i][8] / 2).round(2)
             proceeds -= (hands[i][8] / 2).round(2)
         }
-        else if (hands[0][1] > hands[i][1] || (hands[0][1] <= 21 && hands[i][6])) {
+        else if (hands[0][1] > hands[i][1] || hands[i][6]) {
             hands_lost += 1
             printf 'The house wins. :('
             if (!hands[i][6]) {
@@ -943,7 +943,7 @@ def results() {
             running_total -= hands[i][8]
             proceeds -= hands[i][8]
         }
-        else if (hands[0][1] == hands[i][1] || (hands[0][1] > 21 && hands[i][6])) {
+        else if (hands[0][1] == hands[i][1]) {
             hands_push += 1
             printf 'Push. :|'
         }
@@ -1161,8 +1161,14 @@ def mainMethod() {
         cut_card_drawn = dealer_hits()
         running_total = results()
         println 'Hands won: ' + hands_won
-        println 'Hands pushed: ' + hands_push
         println 'Hands lost: ' + hands_lost
+        println 'Hands pushed: ' + hands_push
+        cash = running_total - running_total.intValue()
+        if (cash > 0) {
+            println 'Balance: ' + running_total.intValue().toString() + ' chips and $' + cash.toString()
+        } else {
+            println 'Balance: ' + running_total.intValue().toString()
+        }
         if (accurate_attempts != total_attempts) {
             println 'Game over.'
             double_tap()

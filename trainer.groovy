@@ -8,13 +8,17 @@
    3. Double on any 2 cards. Double [allowed | not allowed] after split.
    4. Surrender [allowed | not allowed]. */
 
+import groovy.json.JsonSlurper
+
 def init_game() {
+    def inputFile = new File("config.json")
+    def config = new JsonSlurper().parseText(inputFile.text)
     default_style = "${(char)27}[37;40m"
-    running_total = 20.0
-    num_decks = 4
-    dealer_stands_soft17 = true
-    double_allowed_after_split = true
-    surrender_allowed = false
+    running_total = config.running_total
+    num_decks = config.num_decks
+    dealer_stands_soft17 = config.dealer_stands_soft17
+    double_allowed_after_split = config.double_allowed_after_split
+    surrender_allowed = config.surrender_allowed
     total_attempts = 0
     accurate_attempts = 0
     hands_won = 0

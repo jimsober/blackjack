@@ -49,7 +49,7 @@ def init_shoe() {
     Collections.shuffle(shoe)
     num_cards = shoe.size()
     cut_index = Math.abs( new Random().nextInt() % (num_cards - (num_cards * .75).intValue()) ) + \
-      (num_cards * .75).intValue()
+      (num_cards * .75).intValue() - 5
     shoe.addAll(cut_index,[['CC',0]])
     cut_card_drawn = false
     println 'The shoe has been shuffled.' + '\7'

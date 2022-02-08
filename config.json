@@ -3,5 +3,7 @@
   "num_decks": 4,
   "dealer_stands_soft17": true,
   "double_allowed_after_split": true,
-  "surrender_allowed": false
+  "surrender_allowed": false,
+  "complete_accuracy": true,
+  "sounds": true
 }

@@ -19,6 +19,8 @@ def init_game() {
     dealer_stands_soft17 = config.dealer_stands_soft17
     double_allowed_after_split = config.double_allowed_after_split
     surrender_allowed = config.surrender_allowed
+    complete_accuracy = config.complete_accuracy
+    sounds = config.sounds
     total_attempts = 0
     accurate_attempts = 0
     hands_won = 0
@@ -28,7 +30,7 @@ def init_game() {
     System.out.print("\033[H\033[2J")
     System.out.flush()
     println 'You have been awarded ' + running_total.intValue() + ' free chips!!! Good luck!'
-    'afplay /System/Library/Sounds/Glass.aiff'.execute()
+    make_sound('Glass.aiff')
     System.console().readLine 'Press <Enter> to continue: '
     System.out.print("\033[H\033[2J")
     System.out.flush()
@@ -58,7 +60,7 @@ def init_shoe() {
     shoe.addAll(cut_index,[['CC',0]])
     cut_card_drawn = false
     println 'The shoe has been shuffled.'
-    'afplay /System/Library/Sounds/Purr.aiff'.execute()
+    make_sound('Purr.aiff')
     return [shoe, cut_card_drawn]
 }
 
@@ -88,9 +90,9 @@ def init_wager() {
     }
     printf 'allowed.\n'
     println()
-//    if (total_attempts != 0) {
-//        println 'Accuracy: ' + (100 * (accurate_attempts / total_attempts)).round(1).toString() + '%'
-//    }
+    if (!complete_accuracy && total_attempts != 0) {
+        println 'Accuracy: ' + (100 * (accurate_attempts / total_attempts)).round(1).toString() + '%'
+    }
     cash = running_total - running_total.intValue()
     if (cash > 0) {
         println 'Balance: ' + running_total.intValue().toString() + ' chips and $' + cash.toString()
@@ -125,16 +127,16 @@ def init_wager() {
                     wager = input.toInteger()
                 } catch (AssertionError ignored) {
                     printf 'Wager cannot be greater than your chip balance.'
-                    'afplay /System/Library/Sounds/Hero.aiff'.execute()
+                    make_sound('Hero.aiff')
                     println()
                 }
             } catch (AssertionError ignored) {
                 printf 'Wager must be greater than zero.'
-                'afplay /System/Library/Sounds/Hero.aiff'.execute()
+                make_sound('Hero.aiff')
                 println()
             } catch (ValueError) {
                 printf 'Wager must be a whole number greater than zero.'
-                'afplay /System/Library/Sounds/Hero.aiff'.execute()
+                make_sound('Hero.aiff')
                 println()
             }
         }
@@ -160,7 +162,7 @@ def deal_card(hand) {
     if (drawn_card[0] == 'CC') {
         cut_card_drawn = true
         println 'The cut card has been drawn.'
-        'afplay /System/Library/Sounds/Tink.aiff'.execute()
+        make_sound('Tink.aiff')
         hand.add(shoe.remove(0))
     } else {
         hand.add(drawn_card)
@@ -204,7 +206,7 @@ def get_action() {
                     valid_actions.add('D')
                 } else {
                     printf 'You do not have enough chips to double.'
-                    'afplay /System/Library/Sounds/Pop.aiff'.execute()
+                    make_sound('Pop.aiff')
                     println()
                 }
             }
@@ -216,7 +218,7 @@ def get_action() {
                     valid_actions.add('S')
                 } else {
                     printf 'You do not have enough chips to split.'
-                    'afplay /System/Library/Sounds/Pop.aiff'.execute()
+                    make_sound('Pop.aiff')
                     println()
                 }
             }
@@ -242,7 +244,7 @@ def get_action() {
                 action_err = false
             } else {
                 println 'Invalid entry. Try again.'
-                'afplay /System/Library/Sounds/Hero.aiff'.execute()
+                make_sound('Hero.aiff')
             }
         }
     }
@@ -928,7 +930,7 @@ def results() {
         if ((hands[0][1] > 21 && !hands[i][6]) || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6]) {
             hands_won += 1
             printf 'Winner! :)'
-            'afplay /System/Library/Sounds/Glass.aiff'.execute()
+            make_sound('Glass.aiff')
             if (hands[i][4]) {
                 running_total += (hands[i][8] * 1.5).round(2)
                 proceeds += (hands[i][8] * 1.5).round(2)
@@ -947,7 +949,7 @@ def results() {
             hands_lost += 1
             printf 'The house wins. :('
             if (!hands[i][6]) {
-                'afplay /System/Library/Sounds/Basso.aiff'.execute()
+                make_sound('Basso.aiff')
             }
             running_total -= hands[i][8]
             proceeds -= hands[i][8]
@@ -1037,7 +1039,7 @@ def reaction() {
         } else {
             println 'Your hand stands at 21.'
         }
-        'afplay /System/Library/Sounds/Ping.aiff'.execute()
+        make_sound('Ping.aiff')
         sleep(1000)
     }
     else if (action == '?') {
@@ -1053,7 +1055,7 @@ def reaction() {
         } else {
             println 'Your strategy is incorrect.'
             printf rule
-            'afplay /System/Library/Sounds/Basso.aiff'.execute()
+            make_sound('Basso.aiff')
             println()
         }
         println()
@@ -1071,7 +1073,7 @@ def reaction() {
             if (hands[hands_index][1] > 21) {
                 hands[hands_index][6] =true
                 printf 'You bust!'
-                'afplay /System/Library/Sounds/Sosumi.aiff'.execute()
+                make_sound('Sosumi.aiff')
                 println()
             }
         }
@@ -1112,7 +1114,7 @@ def end_of_game() {
                 show_outcome()
             } else {
                 printf 'Try again. '
-                'afplay /System/Library/Sounds/Hero.aiff'.execute()
+                make_sound('Hero.aiff')
                 println()
             }
         }
@@ -1129,6 +1131,13 @@ def colorize(card) {
     else if (card[1] == 'H') { style = "${(char)27}[31;40"+'m' }
     else if (card[1] == 'S') { style = "${(char)27}[94;40"+'m' }
     return style
+}
+
+def make_sound(sound_name) {
+    command = "afplay /System/Library/Sounds/" + sound_name
+    if (sounds) {
+        command.execute()
+    }
 }
 
 def mainMethod() {
@@ -1172,9 +1181,9 @@ def mainMethod() {
         } else {
             println 'Balance: ' + running_total.intValue().toString()
         }
-        if (accurate_attempts != total_attempts) {
+        if (complete_accuracy && accurate_attempts != total_attempts) {
             println 'Game over.'
-            'afplay /System/Library/Sounds/Funk.aiff'.execute()
+            make_sound('Funk.aiff')
             println 'Your accuracy has fallen below 100%.'
             play_again = false
             show_outcome()

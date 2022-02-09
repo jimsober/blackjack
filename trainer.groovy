@@ -162,7 +162,7 @@ def deal_card(hand) {
     if (drawn_card[0] == 'CC') {
         cut_card_drawn = true
         println 'The cut card has been drawn.'
-        make_sound('Tink.aiff')
+        make_sound('Pop.aiff')
         hand.add(shoe.remove(0))
     } else {
         hand.add(drawn_card)
@@ -206,7 +206,7 @@ def get_action() {
                     valid_actions.add('D')
                 } else {
                     printf 'You do not have enough chips to double.'
-                    make_sound('Pop.aiff')
+                    make_sound('Tink.aiff')
                     println()
                 }
             }
@@ -218,7 +218,7 @@ def get_action() {
                     valid_actions.add('S')
                 } else {
                     printf 'You do not have enough chips to split.'
-                    make_sound('Pop.aiff')
+                    make_sound('Tink.aiff')
                     println()
                 }
             }
@@ -1078,6 +1078,9 @@ def reaction() {
             }
         }
         show_hand()
+        if (action == 'D' && hands[hands_index][1] == 21) {
+            make_sound('Ping.aiff')
+        }
     }
     return cut_card_drawn
 }

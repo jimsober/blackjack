@@ -1078,8 +1078,11 @@ def reaction() {
             }
         }
         show_hand()
-        if (action == 'D' && hands[hands_index][1] == 21) {
-            make_sound('Ping.aiff')
+        if (action == 'D') {
+            if (hands[hands_index][1] == 21) {
+                make_sound('Ping.aiff')
+            }
+            sleep(1000)
         }
     }
     return cut_card_drawn

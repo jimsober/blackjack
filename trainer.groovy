@@ -125,7 +125,7 @@ def cashier(action) {
             if (balance > 0) {
                 max_sell = gambler_account
             } else {
-                max_sell = gambler_chips_cash
+                max_sell = gambler_chips_cash.intValue()
             }
             units_err = true
             units_quit = false

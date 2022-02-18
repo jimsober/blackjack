@@ -1,6 +1,7 @@
 {
-  "running_total": 20.0,
-  "num_decks": 4,
+  "min_wager": 5,
+  "credit_limit": 1000,
+  "num_decks": 8,
   "dealer_stands_soft17": true,
   "double_allowed_after_split": true,
   "surrender_allowed": false,

@@ -1030,11 +1030,13 @@ def take_action() {
     else if (action == 'D') {
         hands[hands_index][8] = 2 * hands[hands_index][8]
         println "You have increased your wager to " + hands[hands_index][8]
+        make_sound('Glass.aiff')
         println()
         cut_card_drawn = deal_card(hands[hands_index][0])
     }
     else if (action == 'S') {
         println "You have increased your wager by " + wager
+        make_sound('Glass.aiff')
         println()
         split_card = hands[hands_index][0][1]
         hands[hands_index][0].remove(split_card)
@@ -1274,6 +1276,7 @@ def show_outcome() {
 }
 
 def end_of_game() {
+    continue_game = true
     println 'Game over.'
     if (gambler_chips_cash.intValue() < min_wager) {
         cashier_input_err = true
@@ -1285,6 +1288,7 @@ def end_of_game() {
                 standings()
                 if (gambler_chips_cash.intValue() == 0) {
                     play_again = false
+                    continue_game = false
                 } else {
                     play_again = true
                 }
@@ -1292,14 +1296,15 @@ def end_of_game() {
             else if (cashier_yn.trim().toUpperCase() == 'N') {
                 cashier_input_err = false
                 play_again = false
+                continue_game = false
             } else {
                 printf 'Try again. '
                 make_sound('Hero.aiff')
                 println()
             }
         }
-        println()
-    } else {
+    }
+    if (continue_game) {
         cashier_input_err = true
         while (cashier_input_err) {
             cashier_yn = System.console().readLine \

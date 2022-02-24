@@ -115,7 +115,7 @@ def cashier(action) {
         if (!units_quit) {
             gambler_account += units
             gambler_chips_cash += units
-            make_sound('Glass.aiff')
+            make_sound('Bottle.aiff')
             sleep(500)
         }
     }
@@ -162,7 +162,7 @@ def cashier(action) {
             if (!units_quit) {
                 gambler_account -= units
                 gambler_chips_cash -= units
-                make_sound('Glass.aiff')
+                make_sound('Bottle.aiff')
                 sleep(500)
             }
         }
@@ -1030,13 +1030,13 @@ def take_action() {
     else if (action == 'D') {
         hands[hands_index][8] = 2 * hands[hands_index][8]
         println "You have increased your wager to " + hands[hands_index][8]
-        make_sound('Glass.aiff')
+        make_sound('Bottle.aiff')
         println()
         cut_card_drawn = deal_card(hands[hands_index][0])
     }
     else if (action == 'S') {
         println "You have increased your wager by " + wager
-        make_sound('Glass.aiff')
+        make_sound('Bottle.aiff')
         println()
         split_card = hands[hands_index][0][1]
         hands[hands_index][0].remove(split_card)

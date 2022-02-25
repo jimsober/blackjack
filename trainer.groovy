@@ -284,10 +284,19 @@ def init_wager() {
                 assert input.toInteger() > 0
                 try {
                     assert input.toInteger() <= gambler_chips_cash
+                } catch (AssertionError ignored) {
+                    printf 'Wager cannot be greater than your chip balance.'
+                    make_sound('Hero.aiff')
+                    println()
+                }
+                try {
+                    assert input.toInteger() >= min_wager
+                    input_err = false
+                    wager = input.toInteger()
                     input_err = false
                     wager = input.toInteger()
                 } catch (AssertionError ignored) {
-                    printf 'Wager cannot be greater than your chip balance.'
+                    printf 'Wager must be a minimum of ' + min_wager.toString() + '.'
                     make_sound('Hero.aiff')
                     println()
                 }
@@ -1297,6 +1306,7 @@ def end_of_game() {
                 cashier_input_err = false
                 play_again = false
                 continue_game = false
+                show_outcome()
             } else {
                 printf 'Try again. '
                 make_sound('Hero.aiff')

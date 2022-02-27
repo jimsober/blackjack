@@ -32,7 +32,9 @@ def init_game() {
     gambler_chips_cash = 0
     clear_screen()
     println '*************************************'
+    println '*                                   *'
     println '*   Welcome to Blackjack Trainer!   *'
+    println '*                                   *'
     println '*************************************'
     println()
     while (gambler_account < min_wager) {
@@ -1146,6 +1148,7 @@ def results() {
         printf default_style
         println()
     }
+    println()
     return gambler_chips_cash
 }
 
@@ -1312,6 +1315,7 @@ def end_of_game() {
             }
         }
     }
+    println()
     if (continue_game) {
         cashier_input_err = true
         while (cashier_input_err) {
@@ -1325,6 +1329,7 @@ def end_of_game() {
             else if (cashier_yn.trim().toUpperCase() == 'Q') {
                 cashier_input_err = false
                 play_again = false
+                println()
                 show_outcome()
             }
             else if (cashier_yn.trim().toUpperCase() == 'C') {
@@ -1343,6 +1348,7 @@ def end_of_game() {
             }
         }
     }
+    println()
     return play_again
 }
 

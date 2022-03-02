@@ -54,33 +54,32 @@ def clear_screen() {
     System.out.flush()
 }
 
-def cashier(action) {
+def cashier(cashier_action) {
     credit_avail = credit_limit - gambler_account
     standings()
-    if (action == 'E') {
+    if (cashier_action == 'E') {
         if (credit_avail > 0 && gambler_chips_cash > 0 && gambler_account > 0) {
-            action_err = true
-            while (action_err) {
-                action = System.console().readLine 'Buy (B) or Sell (S) chips? or Quit (Q): '
-                action = action.trim().toUpperCase()
-                if (action in ['B', 'S', 'Q']) {
-                    action_err = false
+            cashier_action_err = true
+            while (cashier_action_err) {
+                cashier_action = System.console().readLine 'Buy (B) or Sell (S) chips? or Quit (Q): '
+                cashier_action = cashier_action.trim().toUpperCase()
+                if (cashier_action in ['B', 'S', 'Q']) {
+                    cashier_action_err = false
                 } else {
                     println 'Invalid entry. Try again.'
                     make_sound('Hero.aiff')
                     println()
                 }
             }
-            println()
         }
         else if (gambler_chips_cash > 0 && gambler_account > 0) {
-            action = 'S'
+            cashier_action = 'S'
         }
         else if (credit_avail > 0) {
-            action = 'B'
+            cashier_action = 'B'
         }
     }
-    if (action == 'B') {
+    if (cashier_action == 'B') {
         units_err = true
         units_quit = false
         while (units_err) {
@@ -121,7 +120,7 @@ def cashier(action) {
             sleep(500)
         }
     }
-    else if (action == 'S') {
+    else if (cashier_action == 'S') {
         balance = gambler_chips_cash - gambler_account
         if (gambler_chips_cash > 0) {
             if (balance > 0) {
@@ -1283,6 +1282,7 @@ def show_outcome() {
           java.text.NumberFormat.currencyInstance.format(-1 * gambler_balance) + default_style + \
           '. Insert credit card below.'
     }
+    println()
 }
 
 def end_of_game() {
@@ -1414,6 +1414,7 @@ def mainMethod() {
         if (cash > 0) {
              printf ' and ' + "${(char)27}[32;40"+'m' + cash_string + default_style
         }
+        println()
         println()
         if (complete_accuracy && accurate_attempts != total_attempts) {
             println 'Game over.'

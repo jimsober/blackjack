@@ -1315,7 +1315,6 @@ def end_of_game() {
             }
         }
     }
-    println()
     if (continue_game) {
         cashier_input_err = true
         while (cashier_input_err) {
@@ -1348,7 +1347,6 @@ def end_of_game() {
             }
         }
     }
-    println()
     return play_again
 }
 

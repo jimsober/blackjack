@@ -177,28 +177,49 @@ def standings() {
     gam_bal_string = '$' + gambler_balance.toString()
     gam_acc_string = '$' + gambler_account.toString()
     cash_string = '$' + cash.toString()
-    if (cash > 0) {
-        println 'Chips   Cash  Account  Balance'
+    if (gambler_chips_cash.intValue().toString().length() <= 4) {
+        chips_pad = 5
     } else {
-        println 'Chips  Account  Balance'
+        chips_pad = gambler_chips_cash.intValue().toString().length() + 1
+    }
+    if (java.text.NumberFormat.currencyInstance.format(cash).length() <= 5) {
+        cash_pad = 7
+    } else {
+        cash_pad = java.text.NumberFormat.currencyInstance.format(cash).length() + 2
+    }
+    if (java.text.NumberFormat.currencyInstance.format(gambler_account).length() <= 7) {
+        account_pad = 9
+    } else {
+        account_pad = java.text.NumberFormat.currencyInstance.format(gambler_account).length() + 2
+    }
+    if (java.text.NumberFormat.currencyInstance.format(gambler_balance).length() <= 7) {
+        balance_pad = 9
+    } else {
+        balance_pad = java.text.NumberFormat.currencyInstance.format(gambler_balance).length() + 2
+    }
+
+    if (cash > 0) {
+        println 'Chips'.padLeft(chips_pad) + 'Cash'.padLeft(cash_pad) + 'Account'.padLeft(account_pad) + 'Balance'.padLeft(balance_pad)
+    } else {
+        println 'Chips'.padLeft(chips_pad) + 'Account'.padLeft(account_pad) + 'Balance'.padLeft(balance_pad)
     }
     if (gambler_chips_cash >= 0) {
-        printf "${(char)27}[32;40"+'m' + gambler_chips_cash.intValue().toString().padLeft(5,' ')
+        printf "${(char)27}[32;40"+'m' + gambler_chips_cash.intValue().toString().padLeft(chips_pad)
     } else {
-        printf "${(char)27}[31;40"+'m' + gambler_chips_cash.intValue().toString().padLeft(5,' ')
+        printf "${(char)27}[31;40"+'m' + gambler_chips_cash.intValue().toString().padLeft(chips_pad)
     }
     if (cash > 0) {
         printf "${(char)27}[32;40"+'m' + java.text.NumberFormat.currencyInstance.format(cash).padLeft(7)
     }
     if (gambler_account >= 0) {
-        printf "${(char)27}[32;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_account).padLeft(9)
+        printf "${(char)27}[32;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_account).padLeft(account_pad)
     } else {
-        printf "${(char)27}[31;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_account).padLeft(9)
+        printf "${(char)27}[31;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_account).padLeft(account_pad)
     }
     if (gambler_balance >= 0) {
-        printf "${(char)27}[32;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_balance).padLeft(9)
+        printf "${(char)27}[32;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_balance).padLeft(balance_pad)
     } else {
-        printf "${(char)27}[31;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_balance).padLeft(9)
+        printf "${(char)27}[31;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_balance).padLeft(balance_pad)
     }
     printf default_style+' '
     println()

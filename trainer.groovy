@@ -1308,8 +1308,9 @@ def show_outcome() {
 
 def end_of_game() {
     continue_game = true
+    credit_avail = credit_limit - gambler_account
     println 'Game over.'
-    if (gambler_chips_cash.intValue() < min_wager) {
+    if (gambler_chips_cash.intValue() < min_wager && credit_avail > 0) {
         cashier_input_err = true
         while (cashier_input_err) {
             cashier_yn = System.console().readLine 'Go to cashier? (Y/N) '
@@ -1339,32 +1340,56 @@ def end_of_game() {
     if (continue_game) {
         cashier_input_err = true
         while (cashier_input_err) {
-            cashier_yn = System.console().readLine \
+            if (credit_avail > 0) {
+                cashier_yn = System.console().readLine \
               'Press <Enter> to play again or enter Q to quit or C to go to the cashier: '
-            if (cashier_yn.trim() == '') {
-                cashier_input_err = false
-                play_again = true
-                clear_screen()
-            }
-            else if (cashier_yn.trim().toUpperCase() == 'Q') {
-                cashier_input_err = false
-                play_again = false
-                println()
-                show_outcome()
-            }
-            else if (cashier_yn.trim().toUpperCase() == 'C') {
-                (gambler_account, gambler_chips_cash) = cashier('E')
-                standings()
-                if (gambler_chips_cash.intValue() == 0) {
+                if (cashier_yn.trim() == '') {
+                    cashier_input_err = false
+                    play_again = true
+                    clear_screen()
+                }
+                else if (cashier_yn.trim().toUpperCase() == 'Q') {
                     cashier_input_err = false
                     play_again = false
-                } else {
-                    play_again = true
+                    println()
+                    show_outcome()
                 }
+                else if (cashier_yn.trim().toUpperCase() == 'C') {
+                    (gambler_account, gambler_chips_cash) = cashier('E')
+                    standings()
+                    if (gambler_chips_cash.intValue() == 0) {
+                        cashier_input_err = false
+                        play_again = false
+                    } else {
+                        play_again = true
+                    }
+                } else {
+                    printf 'Try again. '
+                    make_sound('Hero.aiff')
+                    println()
+                }
+            } else if (gambler_chips_cash.intValue() == 0) {
+                cashier_input_err = false
+                play_again = false
+                show_outcome()
             } else {
-                printf 'Try again. '
-                make_sound('Hero.aiff')
-                println()
+                cashier_yn = System.console().readLine \
+                'Press <Enter> to play again or enter Q to quit: '
+                if (cashier_yn.trim() == '') {
+                    cashier_input_err = false
+                    play_again = true
+                    clear_screen()
+                }
+                else if (cashier_yn.trim().toUpperCase() == 'Q') {
+                    cashier_input_err = false
+                    play_again = false
+                    println()
+                    show_outcome()
+                } else {
+                    printf 'Try again. '
+                    make_sound('Hero.aiff')
+                    println()
+                }
             }
         }
     }

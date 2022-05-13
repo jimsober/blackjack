@@ -1340,9 +1340,9 @@ def end_of_game() {
     if (continue_game) {
         cashier_input_err = true
         while (cashier_input_err) {
-            if (credit_avail > 0) {
+            if (gambler_chips_cash > 0 || credit_avail > 0) {
                 cashier_yn = System.console().readLine \
-              'Press <Enter> to play again or enter Q to quit or C to go to the cashier: '
+                  'Press <Enter> to play again or enter Q to quit or C to go to the cashier: '
                 if (cashier_yn.trim() == '') {
                     cashier_input_err = false
                     play_again = true

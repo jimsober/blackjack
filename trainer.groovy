@@ -1310,7 +1310,7 @@ def end_of_game() {
     continue_game = true
     credit_avail = credit_limit - gambler_account
     println 'Game over.'
-    if (gambler_chips_cash.intValue() < min_wager && credit_avail > 0) {
+    if (gambler_chips_cash.intValue() < min_wager && credit_avail >= (min_wager - gambler_chips_cash.intValue())) {
         cashier_input_err = true
         while (cashier_input_err) {
             cashier_yn = System.console().readLine 'Go to cashier? (Y/N) '

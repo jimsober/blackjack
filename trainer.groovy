@@ -58,7 +58,7 @@ def cashier(cashier_action) {
     credit_avail = credit_limit - gambler_account
     standings()
     if (cashier_action == 'E') {
-        if (credit_avail > 0 && gambler_chips_cash > 0 && gambler_account > 0) {
+        if (credit_avail > 0 && gambler_chips_cash.intValue() > 0 && gambler_account > 0) {
             cashier_action_err = true
             while (cashier_action_err) {
                 cashier_action = System.console().readLine 'Buy (B) or Sell (S) chips? or Quit (Q): '
@@ -72,7 +72,7 @@ def cashier(cashier_action) {
                 }
             }
         }
-        else if (gambler_chips_cash > 0 && gambler_account > 0) {
+        else if (gambler_chips_cash.intValue() > 0 && gambler_account > 0) {
             cashier_action = 'S'
         }
         else if (credit_avail > 0) {
@@ -1307,90 +1307,68 @@ def show_outcome() {
 }
 
 def end_of_game() {
-    continue_game = true
     credit_avail = credit_limit - gambler_account
     println 'Game over.'
-    if (gambler_chips_cash.intValue() < min_wager && credit_avail >= (min_wager - gambler_chips_cash.intValue())) {
-        cashier_input_err = true
-        while (cashier_input_err) {
-            cashier_yn = System.console().readLine 'Go to cashier? (Y/N) '
-            if (cashier_yn.trim().toUpperCase() == 'Y') {
+    cashier_input_err = true
+    while (cashier_input_err) {
+        cont_options = []
+        valid_cont_actions = []
+        if (gambler_chips_cash.intValue() >= min_wager) {
+            cont_options.add('Press <Enter> to play again or enter Q to quit')
+            valid_cont_actions.add('')
+            valid_cont_actions.add('Q')
+            if (credit_avail >= (min_wager - gambler_chips_cash.intValue())) {
+                cont_options.add('or C to go to the cashier')
+                valid_cont_actions.add('C')
+            }
+        }
+        else if (credit_avail >= (min_wager - gambler_chips_cash.intValue())) {
+            cont_options.add('Enter Q to quit or C to go to the cashier')
+            valid_cont_actions.add('Q')
+            valid_cont_actions.add('C')
+        }
+        if (cont_options.size() > 0) {
+            cont_prompt = ''
+            if (cont_options.size() > 1) {
+                for (i = 0; i < (cont_options.size() - 1); i++) {
+                    cont_prompt += cont_options[i] + ' '
+                }
+                cont_prompt += cont_options[cont_options.size() - 1] + ': '
+            } else {
+                cont_prompt = cont_options[0] + ': '
+            }
+            cont_action = System.console().readLine cont_prompt
+            cont_action = cont_action.trim().toUpperCase()
+            if (cont_action == '') {
                 cashier_input_err = false
+                play_again = true
+                clear_screen()
+            } else if (cont_action == 'Q') {
+                cashier_input_err = false
+                play_again = false
+                println()
+                show_outcome()
+            } else if (cont_action == 'C') {
                 (gambler_account, gambler_chips_cash) = cashier('E')
+                credit_avail = credit_limit - gambler_account
                 standings()
-                if (gambler_chips_cash.intValue() == 0) {
+                if (gambler_chips_cash.intValue() == 0 && credit_avail == 0) {
+                    cashier_input_err = false
                     play_again = false
-                    continue_game = false
+                    println()
+                    show_outcome()
                 } else {
                     play_again = true
                 }
-            }
-            else if (cashier_yn.trim().toUpperCase() == 'N') {
-                cashier_input_err = false
-                play_again = false
-                continue_game = false
-                show_outcome()
             } else {
                 printf 'Try again. '
                 make_sound('Hero.aiff')
                 println()
             }
-        }
-    }
-    if (continue_game) {
-        cashier_input_err = true
-        while (cashier_input_err) {
-            if (gambler_chips_cash > 0 || credit_avail > 0) {
-                cashier_yn = System.console().readLine \
-                  'Press <Enter> to play again or enter Q to quit or C to go to the cashier: '
-                if (cashier_yn.trim() == '') {
-                    cashier_input_err = false
-                    play_again = true
-                    clear_screen()
-                }
-                else if (cashier_yn.trim().toUpperCase() == 'Q') {
-                    cashier_input_err = false
-                    play_again = false
-                    println()
-                    show_outcome()
-                }
-                else if (cashier_yn.trim().toUpperCase() == 'C') {
-                    (gambler_account, gambler_chips_cash) = cashier('E')
-                    standings()
-                    if (gambler_chips_cash.intValue() == 0) {
-                        cashier_input_err = false
-                        play_again = false
-                    } else {
-                        play_again = true
-                    }
-                } else {
-                    printf 'Try again. '
-                    make_sound('Hero.aiff')
-                    println()
-                }
-            } else if (gambler_chips_cash.intValue() == 0) {
-                cashier_input_err = false
-                play_again = false
-                show_outcome()
-            } else {
-                cashier_yn = System.console().readLine \
-                'Press <Enter> to play again or enter Q to quit: '
-                if (cashier_yn.trim() == '') {
-                    cashier_input_err = false
-                    play_again = true
-                    clear_screen()
-                }
-                else if (cashier_yn.trim().toUpperCase() == 'Q') {
-                    cashier_input_err = false
-                    play_again = false
-                    println()
-                    show_outcome()
-                } else {
-                    printf 'Try again. '
-                    make_sound('Hero.aiff')
-                    println()
-                }
-            }
+        } else {
+            cashier_input_err = false
+            play_again = false
+            show_outcome()
         }
     }
     return play_again

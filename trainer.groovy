@@ -221,8 +221,9 @@ def standings() {
     } else {
         printf "${(char)27}[31;40"+'m' + java.text.NumberFormat.currencyInstance.format(gambler_balance).padLeft(balance_pad)
     }
-    printf default_style+' '
+    println default_style
     println()
+    winloss()
     println()
 }
 
@@ -1114,6 +1115,7 @@ def get_wager_total() {
 
 def results() {
     println()
+    println 'Game over. '
     proceeds = 0.0
     for (int i = 1;i<hands.size();i++) {
         if (hands.size() > 2) {
@@ -1306,9 +1308,22 @@ def show_outcome() {
     println()
 }
 
+def winloss() {
+    if (surrender_allowed) {
+        printf 'Win-Loss-Surrender-Push: '
+    } else {
+        printf 'Win-Loss-Push: '
+    }
+    printf "${(char)27}[32;40"+'m' + hands_won + default_style + '-' + "${(char)27}[31;40"+'m' + hands_lost \
+      + default_style + '-'
+    if (surrender_allowed) {
+        printf hands_surrender
+    }
+    println hands_push
+}
+
 def end_of_game() {
     credit_avail = credit_limit - gambler_account
-    println 'Game over.'
     cashier_input_err = true
     while (cashier_input_err) {
         cont_options = []
@@ -1339,16 +1354,16 @@ def end_of_game() {
             }
             cont_action = System.console().readLine cont_prompt
             cont_action = cont_action.trim().toUpperCase()
-            if (cont_action == '') {
+            if (cont_action.isEmpty() && valid_cont_actions.contains('')) {
                 cashier_input_err = false
                 play_again = true
                 clear_screen()
-            } else if (cont_action == 'Q') {
+            } else if (cont_action == 'Q' && valid_cont_actions.contains('Q')) {
                 cashier_input_err = false
                 play_again = false
                 println()
                 show_outcome()
-            } else if (cont_action == 'C') {
+            } else if (cont_action == 'C' && valid_cont_actions.contains('C')) {
                 (gambler_account, gambler_chips_cash) = cashier('E')
                 credit_avail = credit_limit - gambler_account
                 standings()
@@ -1423,12 +1438,8 @@ def mainMethod() {
         }
         cut_card_drawn = dealer_hits()
         gambler_chips_cash = results()
-        println 'Hands won: ' + hands_won
-        println 'Hands lost: ' + hands_lost
-        if (surrender_allowed) {
-            println 'Hands surrendered: ' + hands_surrender
-        }
-        println 'Hands pushed: ' + hands_push
+        winloss()
+        println()
         cash = gambler_chips_cash - gambler_chips_cash.intValue()
         cash_string = '$' + cash.toString()
         printf 'Result: ' + "${(char)27}[32;40"+'m' + gambler_chips_cash.intValue().toString() + default_style + \
@@ -1439,7 +1450,6 @@ def mainMethod() {
         println()
         println()
         if (complete_accuracy && accurate_attempts != total_attempts) {
-            println 'Game over.'
             make_sound('Funk.aiff')
             println 'Your accuracy has fallen below 100%.'
             play_again = false

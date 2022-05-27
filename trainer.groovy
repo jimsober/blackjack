@@ -1317,7 +1317,7 @@ def winloss() {
     printf "${(char)27}[32;40"+'m' + hands_won + default_style + '-' + "${(char)27}[31;40"+'m' + hands_lost \
       + default_style + '-'
     if (surrender_allowed) {
-        printf hands_surrender
+        printf hands_surrender + '-'
     }
     println hands_push
 }
@@ -1438,8 +1438,6 @@ def mainMethod() {
         }
         cut_card_drawn = dealer_hits()
         gambler_chips_cash = results()
-        winloss()
-        println()
         cash = gambler_chips_cash - gambler_chips_cash.intValue()
         cash_string = '$' + cash.toString()
         printf 'Result: ' + "${(char)27}[32;40"+'m' + gambler_chips_cash.intValue().toString() + default_style + \
@@ -1448,6 +1446,8 @@ def mainMethod() {
              printf ' and ' + "${(char)27}[32;40"+'m' + cash_string + default_style
         }
         println()
+        println()
+        winloss()
         println()
         if (complete_accuracy && accurate_attempts != total_attempts) {
             make_sound('Funk.aiff')

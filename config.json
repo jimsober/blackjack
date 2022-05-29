@@ -6,5 +6,7 @@
   "double_allowed_after_split": true,
   "surrender_allowed": false,
   "complete_accuracy": true,
-  "sounds": true
+  "sounds": true,
+  "display_winloss_stat": true,
+  "display_doubled_winloss_stat": false
 }

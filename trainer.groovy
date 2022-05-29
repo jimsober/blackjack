@@ -22,12 +22,19 @@ def init_game() {
     surrender_allowed = config.surrender_allowed
     complete_accuracy = config.complete_accuracy
     sounds = config.sounds
+    display_winloss_stat = config.display_winloss_stat
+    display_doubled_winloss_stat = config.display_doubled_winloss_stat
+
     total_attempts = 0
     accurate_attempts = 0
     hands_won = 0
     hands_push = 0
     hands_lost = 0
     hands_surrender = 0
+    doubled_hands_won = 0
+    doubled_hands_push = 0
+    doubled_hands_lost = 0
+    doubled_hands_surrender = 0
     gambler_account = 0
     gambler_chips_cash = 0
     clear_screen()
@@ -46,7 +53,7 @@ def init_game() {
     }
     return [default_style, gambler_account, gambler_chips_cash, num_decks, dealer_stands_soft17, \
       double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts, hands_won, hands_push, \
-      hands_lost, hands_surrender]
+      hands_lost, hands_surrender, doubled_hands_won, doubled_hands_push, doubled_hands_lost, doubled_hands_surrender]
 }
 
 def clear_screen() {
@@ -223,8 +230,16 @@ def standings() {
     }
     println default_style
     println()
-    winloss()
-    println()
+    if (display_winloss_stat) {
+        winloss(hands_won, hands_lost, hands_surrender, hands_push, false)
+        if (!display_doubled_winloss_stat) {
+            println()
+        }
+    }
+    if (display_doubled_winloss_stat) {
+        winloss(doubled_hands_won, doubled_hands_lost, doubled_hands_surrender, doubled_hands_push, true)
+        println()
+    }
 }
 
 def init_shoe() {
@@ -1123,6 +1138,9 @@ def results() {
         }
         if ((hands[0][1] > 21 && !hands[i][6]) || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6]) {
             hands_won += 1
+            if (action == 'D') {
+                doubled_hands_won += 1
+            }
             printf 'Winner! :)'
             make_sound('Glass.aiff')
             if (hands[i][4]) {
@@ -1141,6 +1159,9 @@ def results() {
         }
         else if (hands[0][1] > hands[i][1] || hands[i][6]) {
             hands_lost += 1
+            if (action == 'D') {
+                doubled_hands_lost += 1
+            }
             printf 'The house wins. :('
             if (!hands[i][6]) {
                 make_sound('Basso.aiff')
@@ -1150,6 +1171,9 @@ def results() {
         }
         else if (hands[0][1] == hands[i][1]) {
             hands_push += 1
+            if (action == 'D') {
+                doubled_hands_push += 1
+            }
             printf 'Push. :|'
         }
         println()
@@ -1308,18 +1332,21 @@ def show_outcome() {
     println()
 }
 
-def winloss() {
+def winloss(Integer num_won, Integer num_lost, Integer num_surrender, Integer num_push, Boolean doubled) {
+    if (doubled) {
+        printf 'Doubled '
+    }
     if (surrender_allowed) {
         printf 'Win-Loss-Surrender-Push: '
     } else {
         printf 'Win-Loss-Push: '
     }
-    printf "${(char)27}[32;40"+'m' + hands_won + default_style + '-' + "${(char)27}[31;40"+'m' + hands_lost \
-      + default_style + '-'
+    printf "${(char)27}[32;40"+'m' + num_won + default_style + '-' + "${(char)27}[31;40"+'m' + num_lost + \
+      default_style + '-'
     if (surrender_allowed) {
-        printf hands_surrender + '-'
+        printf num_surrender + '-'
     }
-    println hands_push
+    println num_push
 }
 
 def end_of_game() {
@@ -1406,8 +1433,8 @@ def make_sound(sound_name) {
 
 def mainMethod() {
     (default_style, gambler_account, gambler_chips_cash, num_decks, dealer_stands_soft17, double_allowed_after_split, \
-      surrender_allowed, total_attempts, accurate_attempts, hands_won, hands_push, hands_lost, hands_surrender) = \
-      init_game()
+      surrender_allowed, total_attempts, accurate_attempts, hands_won, hands_push, hands_lost, hands_surrender, \
+      doubled_hands_won, doubled_hands_push, doubled_hands_lost, doubled_hands_surrender) = init_game()
     clear_screen()
     (shoe, cut_card_drawn) = init_shoe()
     play_again = true
@@ -1447,8 +1474,16 @@ def mainMethod() {
         }
         println()
         println()
-        winloss()
-        println()
+        if (display_winloss_stat) {
+            winloss(hands_won, hands_lost, hands_surrender, hands_push, false)
+            if (!display_doubled_winloss_stat) {
+                println()
+            }
+        }
+        if (display_doubled_winloss_stat) {
+            winloss(doubled_hands_won, doubled_hands_lost, doubled_hands_surrender, doubled_hands_push, true)
+            println()
+        }
         if (complete_accuracy && accurate_attempts != total_attempts) {
             make_sound('Funk.aiff')
             println 'Your accuracy has fallen below 100%.'

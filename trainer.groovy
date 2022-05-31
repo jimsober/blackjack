@@ -24,6 +24,7 @@ def init_game() {
     sounds = config.sounds
     display_winloss_stat = config.display_winloss_stat
     display_doubled_winloss_stat = config.display_doubled_winloss_stat
+    display_blackjack_stat = config.display_blackjack_stat
 
     total_attempts = 0
     accurate_attempts = 0
@@ -35,6 +36,8 @@ def init_game() {
     doubled_hands_push = 0
     doubled_hands_lost = 0
     doubled_hands_surrender = 0
+    blackjack_won = 0
+    blackjack_push = 0
     gambler_account = 0
     gambler_chips_cash = 0
     clear_screen()
@@ -53,7 +56,8 @@ def init_game() {
     }
     return [default_style, gambler_account, gambler_chips_cash, num_decks, dealer_stands_soft17, \
       double_allowed_after_split, surrender_allowed, total_attempts, accurate_attempts, hands_won, hands_push, \
-      hands_lost, hands_surrender, doubled_hands_won, doubled_hands_push, doubled_hands_lost, doubled_hands_surrender]
+      hands_lost, hands_surrender, doubled_hands_won, doubled_hands_push, doubled_hands_lost, doubled_hands_surrender, \
+      blackjack_won, blackjack_push]
 }
 
 def clear_screen() {
@@ -238,6 +242,12 @@ def standings() {
     }
     if (display_doubled_winloss_stat) {
         winloss(doubled_hands_won, doubled_hands_lost, doubled_hands_surrender, doubled_hands_push, true)
+        if (!display_blackjack_stat) {
+            println()
+        }
+    }
+    if (display_blackjack_stat) {
+        blackjack_stat()
         println()
     }
 }
@@ -1144,6 +1154,7 @@ def results() {
             printf 'Winner! :)'
             make_sound('Glass.aiff')
             if (hands[i][4]) {
+                blackjack_won += 1
                 gambler_chips_cash += (hands[i][8] * 1.5).round(2)
                 proceeds += (hands[i][8] * 1.5).round(2)
             } else {
@@ -1173,6 +1184,9 @@ def results() {
             hands_push += 1
             if (action == 'D') {
                 doubled_hands_push += 1
+            }
+            if (hands[i][4]) {
+                blackjack_push += 1
             }
             printf 'Push. :|'
         }
@@ -1349,6 +1363,12 @@ def winloss(Integer num_won, Integer num_lost, Integer num_surrender, Integer nu
     println num_push
 }
 
+def blackjack_stat() {
+    printf 'Blackjack Win-Push: '
+    printf "${(char)27}[32;40"+'m' + blackjack_won + default_style + '-'
+    println blackjack_push
+}
+
 def end_of_game() {
     credit_avail = credit_limit - gambler_account
     cashier_input_err = true
@@ -1434,7 +1454,8 @@ def make_sound(sound_name) {
 def mainMethod() {
     (default_style, gambler_account, gambler_chips_cash, num_decks, dealer_stands_soft17, double_allowed_after_split, \
       surrender_allowed, total_attempts, accurate_attempts, hands_won, hands_push, hands_lost, hands_surrender, \
-      doubled_hands_won, doubled_hands_push, doubled_hands_lost, doubled_hands_surrender) = init_game()
+      doubled_hands_won, doubled_hands_push, doubled_hands_lost, doubled_hands_surrender, blackjack_won, \
+      blackjack_push) = init_game()
     clear_screen()
     (shoe, cut_card_drawn) = init_shoe()
     play_again = true
@@ -1476,12 +1497,18 @@ def mainMethod() {
         println()
         if (display_winloss_stat) {
             winloss(hands_won, hands_lost, hands_surrender, hands_push, false)
-            if (!display_doubled_winloss_stat) {
+            if (!display_doubled_winloss_stat && !display_blackjack_stat) {
                 println()
             }
         }
         if (display_doubled_winloss_stat) {
             winloss(doubled_hands_won, doubled_hands_lost, doubled_hands_surrender, doubled_hands_push, true)
+            if (!display_blackjack_stat) {
+                println()
+            }
+        }
+        if (display_blackjack_stat) {
+            blackjack_stat()
             println()
         }
         if (complete_accuracy && accurate_attempts != total_attempts) {

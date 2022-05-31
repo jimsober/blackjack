@@ -8,5 +8,6 @@
   "complete_accuracy": true,
   "sounds": true,
   "display_winloss_stat": true,
-  "display_doubled_winloss_stat": false
+  "display_doubled_winloss_stat": true,
+  "display_blackjack_stat": true
 }

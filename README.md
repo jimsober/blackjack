@@ -1,13 +1,16 @@
 # Blackjack trainer
 Options
-1. Minimum wager.
-2. Credit limit.
-3. [Multiple (2, 4, 6, 8) | Single] deck(s).
-4. Dealer [stands | hits] on soft 17.
-5. Double on any 2 cards. Double [allowed | not allowed] after split.
-6. Surrender [allowed | not allowed].
-7. Require 100% accuracy to continue play.
-8. Sounds.
+* Minimum wager.
+* Credit limit.
+* [Multiple (2, 4, 6, 8) | Single] deck(s).
+* Dealer [stands | hits] on soft 17.
+* Double on any 2 cards. Double [allowed | not allowed] after split.
+* Surrender [allowed | not allowed].
+* Sudden death mode (requires 100% accuracy to continue play).
+* Sounds.
+* Display win-loss stats.
+* Display doubled win-loss stats.
+* Display blackjack stats.
 
 The above options are implemented in config.json as in this example:
 ```
@@ -19,6 +22,9 @@ The above options are implemented in config.json as in this example:
   "double_allowed_after_split": true,
   "surrender_allowed": false,
   "complete_accuracy": true,
-  "sounds": true
+  "sounds": true,
+  "display_winloss_stat": true,
+  "display_doubled_winloss_stat": true,
+  "display_blackjack_stat": true
 }
 ```

@@ -236,7 +236,7 @@ def standings() {
     println()
     if (display_winloss_stat) {
         winloss(hands_won, hands_lost, hands_surrender, hands_push, false)
-        if (!display_doubled_winloss_stat) {
+        if (!display_doubled_winloss_stat && !display_blackjack_stat) {
             println()
         }
     }
@@ -362,9 +362,9 @@ def init_wager() {
 
 def deal() {
     hands_played = 0
-    hands = [] //[ [hand], hand score, hand ranks, soft ace, blackjack, surrendered, busted, split, wager ]
-    hands[0] = [[],0,[],false,false,false,false,false,wager]
-    hands[1] = [[],0,[],false,false,false,false,false,wager]
+    hands = [] //[ hand, hand score, hand ranks, soft ace, blackjack, surrendered, busted, split, doubled, wager ]
+    hands[0] = [[],0,[],false,false,false,false,false,false,wager]
+    hands[1] = [[],0,[],false,false,false,false,false,false,wager]
     deal_card(hands[1][0])
     deal_card(hands[0][0])
     deal_card(hands[1][0])
@@ -417,7 +417,7 @@ def get_action() {
         valid_actions = ['', 'H']
         if (hands[hands_index][0].size() == 2) {
             if (!hands[hands_index][7] || (hands[hands_index][7] && double_allowed_after_split)) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                     options.add('D to double')
                     valid_actions.add('D')
                 } else {
@@ -429,7 +429,7 @@ def get_action() {
         }
         if (hands[hands_index][0].size() == 2) {
             if (hands[hands_index][0][0][0][0] == hands[hands_index][0][1][0][0]) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                     options.add('S to split')
                     valid_actions.add('S')
                 } else {
@@ -464,6 +464,9 @@ def get_action() {
             }
         }
     }
+    if (action == 'D') {
+        hands[hands_index][8] = true
+    }
     return action
 }
 
@@ -471,25 +474,25 @@ def check_strategy() {
     correct_strategy = false
     // A,8
     if (hands[hands_index][0].size() == 2 && hands[hands_index][2] as Set == ['A','8'] as Set && num_decks == 1) {
-        if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+        if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
             rule = 'Stand on A & 8 when dealer shows 2-5, or 7 and higher. Double when 6.'
         } else {
             rule = 'Stand on A & 8 when dealer shows 2-5, or 7 and higher. Hit when 6 (unable to double).'
         }
-        if (gambler_chips_cash - wager_total - hands[hands_index][8] < 0 \
+        if (gambler_chips_cash - wager_total - hands[hands_index][9] < 0 \
           && hands[0][0][1][0][0] in ['2','3','4','5','7','8','9','0','J','Q','K','A'] && action == ''.toString()) {
             correct_strategy = true
         }
-        else if (hands[0][0][1][0][0] == '6' && (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 \
+        else if (hands[0][0][1][0][0] == '6' && (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 \
           && (!hands[hands_index][7] || (hands[hands_index][7] && double_allowed_after_split)) && action == 'D') \
-          || gambler_chips_cash - wager_total - hands[hands_index][8] < 0 && action == 'H') {
+          || gambler_chips_cash - wager_total - hands[hands_index][9] < 0 && action == 'H') {
             correct_strategy = true
         }
     }
     // A,7
     else if (hands[hands_index][0].size() == 2 && hands[hands_index][2] as Set == ['A','7'] as Set) {
         if (num_decks > 1) {
-            if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+            if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                 rule = 'Stand on A & 7 when dealer shows 2, or 7-8. Double when 3-6. Hit when 9 and higher.'
             } else {
                 rule = 'Stand on A & 7 when dealer shows 2, or 7-8. Hit when 3-6 (unable to double), or 9 and higher.'
@@ -498,15 +501,15 @@ def check_strategy() {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['3','4','5','6'] \
-              && (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 && action == 'D') \
-              || gambler_chips_cash - wager_total - hands[hands_index][8] < 0 && action == 'H') {
+              && (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 && action == 'D') \
+              || gambler_chips_cash - wager_total - hands[hands_index][9] < 0 && action == 'H') {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['9','0','J','Q','K','A'] && action == 'H') {
                 correct_strategy = true
             }
         } else {
-            if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+            if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                 rule = 'Stand on A & 7 when dealer shows 2, 7-8, or A. Double when 3-6. Hit when 9-K.'
             } else {
                 rule = 'Stand on A & 7 when dealer shows 2, 7-8, or A. Hit when 3-6 (unable to double), or 9-K.'
@@ -515,9 +518,9 @@ def check_strategy() {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['3','4','5','6'] \
-              && (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 && (!hands[hands_index][7] \
+              && (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 && (!hands[hands_index][7] \
               || (hands[hands_index][7] && double_allowed_after_split)) && action == 'D') \
-              || gambler_chips_cash - wager_total - hands[hands_index][8] < 0 && action == 'H') {
+              || gambler_chips_cash - wager_total - hands[hands_index][9] < 0 && action == 'H') {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['9','0','J','Q','K'] && action == 'H') {
@@ -528,7 +531,7 @@ def check_strategy() {
     // A,6
     else if (hands[hands_index][0].size() == 2 && hands[hands_index][2] as Set == ['A','6'] as Set) {
         if (num_decks > 1) {
-            if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+            if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                 rule = 'Hit on A & 6 when dealer shows 2, or 7 and higher. Double when 3-6.'
             } else {
                 rule = 'Always hit on A & 6 (unable to double when dealer shows 3-6).'
@@ -537,12 +540,12 @@ def check_strategy() {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['3','4','5','6'] \
-              && (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 && action == 'D') \
-              || gambler_chips_cash - wager_total - hands[hands_index][8] < 0 && action == 'H') {
+              && (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 && action == 'D') \
+              || gambler_chips_cash - wager_total - hands[hands_index][9] < 0 && action == 'H') {
                 correct_strategy = true
             }
         } else {
-            if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+            if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                 rule = 'Hit on A & 6 when dealer shows 7 and higher. Double when 2-6.'
             } else {
                 rule = 'Always hit on A & 6 (unable to double when dealer shows 2-6).'
@@ -551,16 +554,16 @@ def check_strategy() {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['2','3','4','5','6'] \
-              && (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 && (!hands[hands_index][7] \
+              && (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 && (!hands[hands_index][7] \
               || (hands[hands_index][7] && double_allowed_after_split)) && action == 'D') \
-              || gambler_chips_cash - wager_total - hands[hands_index][8] < 0 && action == 'H') {
+              || gambler_chips_cash - wager_total - hands[hands_index][9] < 0 && action == 'H') {
                 correct_strategy = true
             }
         }
     }
     // A,5
     else if (hands[hands_index][0].size() == 2 && hands[hands_index][2] as Set == ['A','5'] as Set \
-      && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+      && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         rule = 'Hit on A & 5 when dealer shows 2-3, or 7 and higher. Double when 4-6.'
         if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
             correct_strategy = true
@@ -572,7 +575,7 @@ def check_strategy() {
     }
     // A,4
     else if (hands[hands_index][0].size() == 2 && hands[hands_index][2] as Set == ['A','4'] as Set \
-      && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+      && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         rule = 'Hit on A & 4 when dealer shows 2-3, or 7 and higher. Double when 4-6.'
         if (hands[0][0][1][0][0] in ['2','3','7','8','9','0','J','Q','K','A'] && action == 'H') {
             correct_strategy = true
@@ -584,7 +587,7 @@ def check_strategy() {
     }
     // A,3
     else if (hands[hands_index][0].size() == 2 && hands[hands_index][2] as Set == ['A','3'] as Set \
-      && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+      && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         if (num_decks > 1) {
             rule = 'Hit on A & 3 when dealer shows 2-4, or 7 and higher. Double when 5-6.'
             if (hands[0][0][1][0][0] in ['2','3','4','7','8','9','0','J','Q','K','A'] && action == 'H') {
@@ -606,7 +609,7 @@ def check_strategy() {
     }
     // A,2
     else if (hands[hands_index][0].size() == 2 && hands[hands_index][2] as Set == ['A','2'] as Set \
-      && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+      && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         if (num_decks > 1) {
             rule = 'Hit on A & 2 when dealer shows 2-4, or 7 and higher. Double when 5-6.'
             if (hands[0][0][1][0][0] in ['2','3','4','7','8','9','0','J','Q','K','A'] && action == 'H') {
@@ -625,13 +628,13 @@ def check_strategy() {
         }
     }
     // A,A
-    else if (hands[hands_index][2] == ['A','A'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 \
+    else if (hands[hands_index][2] == ['A','A'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 \
       && (action == 'S' || action == '?')) {
             rule = 'Always split on A & A.'
             correct_strategy = true
     }
     // 9,9
-    else if (hands[hands_index][2] == ['9','9'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+    else if (hands[hands_index][2] == ['9','9'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         rule = 'Split on 9 & 9 when dealer shows 2-6, or 8-9. Stand when 7, or 10 or higher.'
         if (hands[0][0][1][0][0] in ['2','3','4','5','6','8','9'] && action == 'S') {
             correct_strategy = true
@@ -641,13 +644,13 @@ def check_strategy() {
         }
     }
     // 8,8
-    else if (hands[hands_index][2] == ['8','8'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 \
+    else if (hands[hands_index][2] == ['8','8'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 \
       && (action == 'S' || action == '?')) {
         rule = 'Always split on 8 & 8.'
         correct_strategy = true
     }
     // 7,7
-    else if (hands[hands_index][2] == ['7','7'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+    else if (hands[hands_index][2] == ['7','7'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         if (num_decks > 1 || (num_decks ==1 && !double_allowed_after_split)) {
             rule = 'Split on 7 & 7 when dealer shows 2-7. Hit when 8 or higher.'
             if (hands[0][0][1][0][0] in ['2','3','4','5','6','7'] && action == 'S') {
@@ -679,7 +682,7 @@ def check_strategy() {
         }
     }
     // 6,6
-    else if (hands[hands_index][2] == ['6','6'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+    else if (hands[hands_index][2] == ['6','6'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         if (num_decks > 1) {
             rule = 'Split on 6 & 6 when dealer shows 3-6. Hit when 2, or 7 or higher.'
             if (hands[0][0][1][0][0] in ['3','4','5','6'] && action == 'S') {
@@ -698,7 +701,7 @@ def check_strategy() {
                     correct_strategy = true
                 }
             } else {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                     rule = 'Split on 6 & 6 when dealer shows 2-6. Hit when 7 or higher.'
                 } else {
                     rule = 'Always hit on 6 & 6 (unable to split when dealer shows 2-6).'
@@ -714,7 +717,7 @@ def check_strategy() {
     }
     // 5,5
     else if (hands[hands_index][2] == ['5','5'] && num_decks > 1 && double_allowed_after_split \
-      && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+      && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         rule = 'Double on 5 & 5 when dealer shows 2-9. Hit when 10 or higher.'
         if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9'] && action == 'D') {
             correct_strategy = true
@@ -724,7 +727,7 @@ def check_strategy() {
         }
     }
     // 4,4
-    else if (hands[hands_index][2] == ['4','4'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+    else if (hands[hands_index][2] == ['4','4'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         if (num_decks > 1) {
             if (double_allowed_after_split) {
                 rule = 'Hit on 4 & 4 when dealer shows 2-4, or 7 or higher. Split when 5-6.'
@@ -753,7 +756,7 @@ def check_strategy() {
         }
     }
     // 3,3
-    else if (hands[hands_index][2] == ['3','3'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+    else if (hands[hands_index][2] == ['3','3'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         if (num_decks > 1) {
             rule = 'Split on 3 & 3 when dealer shows 2-7. Hit when 8 or higher.'
             if (hands[0][0][1][0][0] in ['2','3','4','5','6','7'] && action == 'S') {
@@ -783,7 +786,7 @@ def check_strategy() {
         }
     }
     // 2,2
-    else if (hands[hands_index][2] == ['2','2'] && gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+    else if (hands[hands_index][2] == ['2','2'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
         if (double_allowed_after_split) {
             if (num_decks > 1) {
                 rule = 'Split on 2 & 2 when dealer shows 2-7. Hit when 8 or higher.'
@@ -936,7 +939,7 @@ def check_strategy() {
     else if (hands[hands_index][1] == 11) {
         if (num_decks > 1) {
             if (hands[hands_index][0].size() == 2) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                     rule = 'Double on 11 when dealer shows 2-K. Hit when A.'
                 } else {
                     rule = 'Always hit on 11 (unable to double when dealer shows 2-K).'
@@ -947,7 +950,7 @@ def check_strategy() {
             if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9','0','J','Q','K']) {
                 if (hands[hands_index][0].size() == 2 && (!hands[hands_index][7] || (hands[hands_index][7] \
                   && double_allowed_after_split)) && action == 'D' \
-                  || (gambler_chips_cash - wager_total - hands[hands_index][8] < 0 \
+                  || (gambler_chips_cash - wager_total - hands[hands_index][9] < 0 \
                   || hands[hands_index][0].size() > 2) && action == 'H') {
                     correct_strategy = true
                 }
@@ -957,7 +960,7 @@ def check_strategy() {
             }
         } else {
             if (hands[hands_index][0].size() == 2) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                     rule = 'Always double on 11.'
                 } else {
                     rule = 'Always hit on 11 (unable to double).'
@@ -967,7 +970,7 @@ def check_strategy() {
             }
             if (hands[hands_index][0].size() == 2 && (!hands[hands_index][7] || (hands[hands_index][7] \
               && double_allowed_after_split)) && action == 'D' \
-              || (gambler_chips_cash - wager_total - hands[hands_index][8] < 0 \
+              || (gambler_chips_cash - wager_total - hands[hands_index][9] < 0 \
               || hands[hands_index][0].size() > 2) && action == 'H') {
                 correct_strategy = true
             }
@@ -976,7 +979,7 @@ def check_strategy() {
     // 10
     else if (hands[hands_index][1] == 10) {
         if (hands[hands_index][0].size() == 2) {
-            if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+            if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                 rule = 'Double on 10 when dealer shows 2-9. Hit when 10 or higher.'
             } else {
                 rule = 'Always hit on 10 (unable to double when dealer shows 2-9).'
@@ -985,10 +988,10 @@ def check_strategy() {
             rule = 'Always hit on 10.'
         }
         if (hands[0][0][1][0][0] in ['2','3','4','5','6','7','8','9']) {
-            if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 && hands[hands_index][0].size() == 2 \
+            if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 && hands[hands_index][0].size() == 2 \
               && (!hands[hands_index][7] || (hands[hands_index][7] && double_allowed_after_split)) \
               && action == 'D' || ((hands[hands_index][0].size() > 2 \
-              || gambler_chips_cash - wager_total - hands[hands_index][8] < 0) && action == 'H')) {
+              || gambler_chips_cash - wager_total - hands[hands_index][9] < 0) && action == 'H')) {
                 correct_strategy = true
             }
         }
@@ -1000,7 +1003,7 @@ def check_strategy() {
     else if (hands[hands_index][1] == 9) {
         if (num_decks > 1) {
             if (hands[hands_index][0].size() == 2) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                     rule = 'Hit on 9 when dealer shows 2, or 7 or higher. Double when 3-6.'
                 } else {
                     rule = 'Always hit on 9 (unable to double when dealer shows 3-6).'
@@ -1012,16 +1015,16 @@ def check_strategy() {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['3','4','5','6']) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 && hands[hands_index][0].size() == 2 \
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 && hands[hands_index][0].size() == 2 \
                   && (!hands[hands_index][7] || (hands[hands_index][7] && double_allowed_after_split)) \
                   && action == 'D' || ((hands[hands_index][0].size() > 2 \
-                  || gambler_chips_cash - wager_total - hands[hands_index][8] < 0) && action == 'H')) {
+                  || gambler_chips_cash - wager_total - hands[hands_index][9] < 0) && action == 'H')) {
                     correct_strategy = true
                 }
             }
         } else {
             if (hands[hands_index][0].size() == 2) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0) {
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
                     rule = 'Double on 9 when dealer shows 2-6. Hit when 7 or higher.'
                 } else {
                     rule = 'Always hit on 9 (unable to double when dealer shows 2-6).'
@@ -1033,10 +1036,10 @@ def check_strategy() {
                 correct_strategy = true
             }
             else if (hands[0][0][1][0][0] in ['2','3','4','5','6']) {
-                if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 && hands[hands_index][0].size() == 2 \
+                if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 && hands[hands_index][0].size() == 2 \
                   && (!hands[hands_index][7] || (hands[hands_index][7] && double_allowed_after_split)) \
                   && action == 'D' || (hands[hands_index][0].size() > 2 \
-                  || gambler_chips_cash - wager_total - hands[hands_index][8] < 0) && action == 'H') {
+                  || gambler_chips_cash - wager_total - hands[hands_index][9] < 0) && action == 'H') {
                     correct_strategy = true
                 }
             }
@@ -1060,10 +1063,10 @@ def check_strategy() {
                     correct_strategy = true
                 }
                 else if (hands[0][0][1][0][0] in ['5','6']) {
-                    if (gambler_chips_cash - wager_total - hands[hands_index][8] >= 0 \
+                    if (gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 \
                       && hands[hands_index][0].size() == 2 && (!hands[hands_index][7] || (hands[hands_index][7] \
                       && double_allowed_after_split)) && action == 'D' || gambler_chips_cash - wager_total - \
-                      hands[hands_index][8] < 0 && hands[hands_index][0].size() > 2 && action == 'H') {
+                      hands[hands_index][9] < 0 && hands[hands_index][0].size() > 2 && action == 'H') {
                         correct_strategy = true
                     }
                 }
@@ -1083,8 +1086,8 @@ def take_action() {
         cut_card_drawn = deal_card(hands[hands_index][0])
     }
     else if (action == 'D') {
-        hands[hands_index][8] = 2 * hands[hands_index][8]
-        println "You have increased your wager to " + hands[hands_index][8]
+        hands[hands_index][9] = 2 * hands[hands_index][9]
+        println "You have increased your wager to " + hands[hands_index][9]
         make_sound('Bottle.aiff')
         println()
         cut_card_drawn = deal_card(hands[hands_index][0])
@@ -1095,7 +1098,7 @@ def take_action() {
         println()
         split_card = hands[hands_index][0][1]
         hands[hands_index][0].remove(split_card)
-        hands[hands.size()] = [[],0,[],false,false,false,false,false,wager]
+        hands[hands.size()] = [[],0,[],false,false,false,false,false,false,wager]
         hands[hands.size() - 1][0].add(split_card)
         cut_card_drawn = deal_card(hands[hands_index][0])
         cut_card_drawn = deal_card(hands[hands.size() - 1][0])
@@ -1133,7 +1136,7 @@ def get_hand_info() {
 def get_wager_total() {
     wager_total = 0
     for (int i = 1;i<hands.size();i++) {
-        wager_total += hands[i][8]
+        wager_total += hands[i][9]
     }
     return wager_total
 }
@@ -1148,41 +1151,41 @@ def results() {
         }
         if ((hands[0][1] > 21 && !hands[i][6]) || (hands[0][1] < hands[i][1]) && !hands[i][5] && !hands[i][6]) {
             hands_won += 1
-            if (action == 'D') {
+            if (hands[i][8]) {
                 doubled_hands_won += 1
             }
             printf 'Winner! :)'
             make_sound('Glass.aiff')
             if (hands[i][4]) {
                 blackjack_won += 1
-                gambler_chips_cash += (hands[i][8] * 1.5).round(2)
-                proceeds += (hands[i][8] * 1.5).round(2)
+                gambler_chips_cash += (hands[i][9] * 1.5).round(2)
+                proceeds += (hands[i][9] * 1.5).round(2)
             } else {
-                gambler_chips_cash += hands[i][8]
-                proceeds += hands[i][8]
+                gambler_chips_cash += hands[i][9]
+                proceeds += hands[i][9]
             }
         }
         else if (hands[i][5]) {
             hands_surrender += 1
             printf 'Your wager has been split with the house.'
-            gambler_chips_cash -= (hands[i][8] / 2).round(2)
-            proceeds -= (hands[i][8] / 2).round(2)
+            gambler_chips_cash -= (hands[i][9] / 2).round(2)
+            proceeds -= (hands[i][9] / 2).round(2)
         }
         else if (hands[0][1] > hands[i][1] || hands[i][6]) {
             hands_lost += 1
-            if (action == 'D') {
+            if (hands[i][8]) {
                 doubled_hands_lost += 1
             }
             printf 'The house wins. :('
             if (!hands[i][6]) {
                 make_sound('Basso.aiff')
             }
-            gambler_chips_cash -= hands[i][8]
-            proceeds -= hands[i][8]
+            gambler_chips_cash -= hands[i][9]
+            proceeds -= hands[i][9]
         }
         else if (hands[0][1] == hands[i][1]) {
             hands_push += 1
-            if (action == 'D') {
+            if (hands[i][8]) {
                 doubled_hands_push += 1
             }
             if (hands[i][4]) {
@@ -1355,8 +1358,16 @@ def winloss(Integer num_won, Integer num_lost, Integer num_surrender, Integer nu
     } else {
         printf 'Win-Loss-Push: '
     }
-    printf "${(char)27}[32;40"+'m' + num_won + default_style + '-' + "${(char)27}[31;40"+'m' + num_lost + \
-      default_style + '-'
+    if (num_won > 0) {
+        printf "${(char)27}[32;40"+'m'
+    }
+    printf num_won.toString() + default_style + '-'
+    if (num_lost > 0) {
+        printf "${(char)27}[31;40"+'m'
+
+    }
+    printf  num_lost.toString() + default_style + '-'
+
     if (surrender_allowed) {
         printf num_surrender + '-'
     }
@@ -1365,7 +1376,10 @@ def winloss(Integer num_won, Integer num_lost, Integer num_surrender, Integer nu
 
 def blackjack_stat() {
     printf 'Blackjack Win-Push: '
-    printf "${(char)27}[32;40"+'m' + blackjack_won + default_style + '-'
+    if (blackjack_won > 0) {
+        printf "${(char)27}[32;40"+'m'
+    }
+    printf blackjack_won.toString() + default_style + '-'
     println blackjack_push
 }
 

@@ -1,6 +1,6 @@
 {
   "min_wager": 5,
-  "credit_limit": 1000,
+  "credit_limit": 100,
   "num_decks": 8,
   "dealer_stands_soft17": true,
   "double_allowed_after_split": true,

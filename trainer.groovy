@@ -1375,12 +1375,18 @@ def winloss(Integer num_won, Integer num_lost, Integer num_surrender, Integer nu
 }
 
 def blackjack_stat() {
-    printf 'Blackjack Win-Push: '
-    if (blackjack_won > 0) {
-        printf "${(char)27}[32;40"+'m'
+    blackjacks = blackjack_won + blackjack_push
+    printf 'Blackjacks: '
+    printf blackjacks.toString()
+    if (blackjacks > 0) {
+        printf ' ('
+        if (blackjack_won > 0) {
+            printf "${(char) 27}[32;40" + 'm'
+        }
+        println blackjack_won + default_style + ' won)'
+    } else {
+        println()
     }
-    printf blackjack_won.toString() + default_style + '-'
-    println blackjack_push
 }
 
 def end_of_game() {

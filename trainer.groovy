@@ -644,10 +644,13 @@ def check_strategy() {
         }
     }
     // 8,8
-    else if (hands[hands_index][2] == ['8','8'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0 \
-      && (action == 'S' || action == '?')) {
-        rule = 'Always split on 8 & 8.'
-        correct_strategy = true
+    else if (hands[hands_index][2] == ['8','8'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {
+        if (action == 'S' || action == '?') {
+            rule = 'Always split on 8 & 8.'
+            correct_strategy = true
+        } else {
+            rule = 'Always split on 8 & 8.'
+        }
     }
     // 7,7
     else if (hands[hands_index][2] == ['7','7'] && gambler_chips_cash - wager_total - hands[hands_index][9] >= 0) {

@@ -302,7 +302,8 @@ def init_wager() {
     if (!surrender_allowed) {
         printf 'not '
     }
-    printf 'allowed.\n'
+    printf 'allowed. '
+    printf 'Minimum wager: $' + min_wager.toString() + '.\n'
     println()
     if (!complete_accuracy && total_attempts != 0) {
         println 'Accuracy: ' + (100 * (accurate_attempts / total_attempts)).round(1).toString() + '%'
@@ -362,9 +363,9 @@ def init_wager() {
 
 def deal() {
     hands_played = 0
-    hands = [] //[ hand, hand score, hand ranks, soft ace, blackjack, surrendered, busted, split, doubled, wager ]
-    hands[0] = [[],0,[],false,false,false,false,false,false,wager]
-    hands[1] = [[],0,[],false,false,false,false,false,false,wager]
+    hands = [] //[ hand, hand score, hand ranks, soft ace, blackjack, surrendered, busted, split, doubled, wager, ins_wager ]
+    hands[0] = [[],0,[],false,false,false,false,false,false,wager,0.0]
+    hands[1] = [[],0,[],false,false,false,false,false,false,wager,0.0]
     deal_card(hands[1][0])
     deal_card(hands[0][0])
     deal_card(hands[1][0])
@@ -406,6 +407,71 @@ def show_start() {
     }
     printf hands[1][1] + ')'
     printf '\n'
+}
+
+def insurance() {
+    buy_ins = 'N'
+    Float ins_wager = 0
+    if (hands[0][0][1][1] == 11) {
+        make_sound('Submarine.aiff')
+        ins_err = true
+        while (ins_err) {
+            buy_ins = System.console().readLine 'The dealer\'s upcard is an Ace. Would you like to buy insurance? (Y/N) '
+            buy_ins = buy_ins.trim().toUpperCase()
+            if (buy_ins in ['N', 'Y']) {
+                ins_err = false
+            } else {
+                println 'Invalid entry. Try again.'
+                make_sound('Hero.aiff')
+            }
+        }
+        println()
+        
+        if (buy_ins == 'Y') {
+            ins_wager = wager/2
+            input_err = true
+            while (input_err) {
+                input = System.console().readLine "Enter insurance wager [${ins_wager.toString()}]: "
+                if (input.trim() == '') {
+                    input_err = false
+                    input = ins_wager.floatValue()
+                } else {
+                    input = input.trim().toFloat()
+                    try {
+                        assert input > 0
+                        try {
+                            assert input <= gambler_chips_cash
+                            try {
+                                assert input <= ins_wager
+                                input_err = false
+                                ins_wager = input
+                            } catch (AssertionError ignored) {
+                                printf 'Insurance wager maximum is ' + ins_wager.toString() + '.'
+                                make_sound('Hero.aiff')
+                                println()
+                            }
+                        } catch (AssertionError ignored) {
+                            printf 'Insurance wager cannot be greater than your balance.'
+                            make_sound('Hero.aiff')
+                            println()
+                        }
+                    } catch (AssertionError ignored) {
+                        printf 'Insurance wager must be greater than zero.'
+                        make_sound('Hero.aiff')
+                        println()
+                    } catch (ValueError) {
+                        printf 'Insurance wager must be an amount greater than zero.'
+                        make_sound('Hero.aiff')
+                        println()
+                    }
+                }
+            }
+            println "You have placed an insurance wager of " + ins_wager
+            make_sound('Bottle.aiff')
+            println()
+        }
+    }
+    return [buy_ins, ins_wager]
 }
 
 def get_action() {
@@ -1101,7 +1167,7 @@ def take_action() {
         println()
         split_card = hands[hands_index][0][1]
         hands[hands_index][0].remove(split_card)
-        hands[hands.size()] = [[],0,[],false,false,false,false,false,false,wager]
+        hands[hands.size()] = [[],0,[],false,false,false,false,false,false,wager,0.0]
         hands[hands.size() - 1][0].add(split_card)
         cut_card_drawn = deal_card(hands[hands_index][0])
         cut_card_drawn = deal_card(hands[hands.size() - 1][0])
@@ -1139,7 +1205,7 @@ def get_hand_info() {
 def get_wager_total() {
     wager_total = 0
     for (int i = 1;i<hands.size();i++) {
-        wager_total += hands[i][9]
+        wager_total += hands[i][9] + hands[i][10]
     }
     return wager_total
 }
@@ -1149,6 +1215,20 @@ def results() {
     println 'Game over. '
     proceeds = 0.0
     for (int i = 1;i<hands.size();i++) {
+        if (hands[i][10] > 0) {
+            if (hands.size() > 2) {
+                printf 'Hand ' + i +': '
+            }
+            if (hands[0][0][0][1] == 10) {
+                println 'The dealer has blackjack. You win your insurance bet!'
+                gambler_chips_cash += hands[i][10] * 2
+                proceeds += hands[i][10] * 2
+            } else {
+                println 'The dealer does not have blackjack. You lose your insurance bet.'
+                gambler_chips_cash -= hands[i][10]
+                proceeds -= hands[i][10]
+            }
+        }
         if (hands.size() > 2) {
             printf 'Hand ' + i +': '
         }
@@ -1201,9 +1281,15 @@ def results() {
     }
     cash = proceeds - proceeds.intValue()
     cash_string = '$' + cash.toString()
-    if (cash > 0) {
-        println 'Total proceeds: ' + "${(char)27}[32;40"+'m' + proceeds.intValue().toString() + default_style + \
+    if (cash != 0) {
+        printf 'Total proceeds: '
+        if (proceeds >= 0) {
+            printf "${(char)27}[32;40"+'m' + proceeds.intValue().toString() + default_style + \
           ' chips and ' + "${(char)27}[32;40"+'m' + cash_string + default_style
+        } else {
+            printf "${(char)27}[31;40"+'m' + proceeds.intValue().toString() + default_style + \
+          ' chips and ' + "${(char)27}[31;40"+'m' + cash_string + default_style
+        }
     } else {
         printf 'Total proceeds: '
         if (proceeds >= 0) {
@@ -1492,6 +1578,10 @@ def mainMethod() {
         hands_played = deal()
         show_start()
         while (hands_index < hands.size()) {
+            (buy_ins, ins_wager) = insurance()
+            if (buy_ins == 'Y') {
+                hands[hands_index][10] = ins_wager
+            }
             action = get_action()
             cut_card_drawn = reaction()
             while (action !in ['','A','D','Q'] && !hands[hands_index][6]) {
@@ -1520,18 +1610,16 @@ def mainMethod() {
         println()
         if (display_winloss_stat) {
             winloss(hands_won, hands_lost, hands_surrender, hands_push, false)
-            if (!display_doubled_winloss_stat && !display_blackjack_stat) {
-                println()
-            }
         }
         if (display_doubled_winloss_stat) {
+            println()
             winloss(doubled_hands_won, doubled_hands_lost, doubled_hands_surrender, doubled_hands_push, true)
-            if (!display_blackjack_stat) {
-                println()
-            }
         }
         if (display_blackjack_stat) {
+            println()
             blackjack_stat()
+        }
+        if (display_winloss_stat || display_doubled_winloss_stat || display_blackjack_stat) {
             println()
         }
         if (complete_accuracy && accurate_attempts != total_attempts) {

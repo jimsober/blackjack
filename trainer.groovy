@@ -416,10 +416,14 @@ def insurance() {
         make_sound('Submarine.aiff')
         ins_err = true
         while (ins_err) {
-            buy_ins = System.console().readLine 'The dealer\'s upcard is an Ace. Would you like to buy insurance? (Y/N) '
-            buy_ins = buy_ins.trim().toUpperCase()
-            if (buy_ins in ['N', 'Y']) {
+            buy_ins_yn = System.console().readLine 'The dealer\'s upcard is an Ace. Would you like to buy insurance (Y/N)? [N] '
+            buy_ins_yn = buy_ins_yn.trim().toUpperCase()
+            if (buy_ins_yn == '') {
                 ins_err = false
+            }
+            else if (buy_ins_yn == 'Y') {
+                ins_err = false
+                buy_ins = 'Y'
             } else {
                 println 'Invalid entry. Try again.'
                 make_sound('Hero.aiff')
@@ -1610,16 +1614,18 @@ def mainMethod() {
         println()
         if (display_winloss_stat) {
             winloss(hands_won, hands_lost, hands_surrender, hands_push, false)
+            if (!display_doubled_winloss_stat && !display_blackjack_stat) {
+                println()
+            }
         }
         if (display_doubled_winloss_stat) {
-            println()
             winloss(doubled_hands_won, doubled_hands_lost, doubled_hands_surrender, doubled_hands_push, true)
+            if (!display_blackjack_stat) {
+                println()
+            }
         }
         if (display_blackjack_stat) {
-            println()
             blackjack_stat()
-        }
-        if (display_winloss_stat || display_doubled_winloss_stat || display_blackjack_stat) {
             println()
         }
         if (complete_accuracy && accurate_attempts != total_attempts) {

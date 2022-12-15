@@ -418,7 +418,7 @@ def insurance() {
         while (ins_err) {
             buy_ins_yn = System.console().readLine 'The dealer\'s upcard is an Ace. Would you like to buy insurance (Y/N)? [N] '
             buy_ins_yn = buy_ins_yn.trim().toUpperCase()
-            if (buy_ins_yn == '') {
+            if (buy_ins_yn == '' || buy_ins_yn == 'N') {
                 ins_err = false
             }
             else if (buy_ins_yn == 'Y') {

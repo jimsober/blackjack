@@ -363,9 +363,9 @@ def init_wager() {
 
 def deal() {
     hands_played = 0
-    hands = [] //[ hand, hand score, hand ranks, soft ace, blackjack, surrendered, busted, split, doubled, wager, ins_wager ]
-    hands[0] = [[],0,[],false,false,false,false,false,false,wager,0.0]
-    hands[1] = [[],0,[],false,false,false,false,false,false,wager,0.0]
+    hands = [] //[ hand, hand score, hand ranks, soft ace, blackjack, surrendered, busted, split, doubled, wager ]
+    hands[0] = [[],0,[],false,false,false,false,false,false,wager]
+    hands[1] = [[],0,[],false,false,false,false,false,false,wager]
     deal_card(hands[1][0])
     deal_card(hands[0][0])
     deal_card(hands[1][0])
@@ -474,6 +474,25 @@ def insurance() {
             make_sound('Bottle.aiff')
             println()
         }
+        sleep(500)
+        if (hands[0][0][0][1] == 10) {
+            printf 'The dealer has blackjack. '
+            if (ins_wager > 0) {
+                println 'You win your insurance bet!'
+                make_sound('Glass.aiff')
+            } else {
+                println()
+            }
+        } else {
+            printf 'The dealer does not have blackjack. '
+            if (ins_wager > 0) {
+                println 'You lose your insurance bet.'
+                make_sound('Basso.aiff')
+            } else {
+                println()
+            }
+        }
+        println()
     }
     return [buy_ins, ins_wager]
 }
@@ -1171,7 +1190,7 @@ def take_action() {
         println()
         split_card = hands[hands_index][0][1]
         hands[hands_index][0].remove(split_card)
-        hands[hands.size()] = [[],0,[],false,false,false,false,false,false,wager,0.0]
+        hands[hands.size()] = [[],0,[],false,false,false,false,false,false,wager]
         hands[hands.size() - 1][0].add(split_card)
         cut_card_drawn = deal_card(hands[hands_index][0])
         cut_card_drawn = deal_card(hands[hands.size() - 1][0])
@@ -1207,9 +1226,9 @@ def get_hand_info() {
 }
 
 def get_wager_total() {
-    wager_total = 0
+    wager_total = ins_wager
     for (int i = 1;i<hands.size();i++) {
-        wager_total += hands[i][9] + hands[i][10]
+        wager_total += hands[i][9]
     }
     return wager_total
 }
@@ -1218,21 +1237,16 @@ def results() {
     println()
     println 'Game over. '
     proceeds = 0.0
-    for (int i = 1;i<hands.size();i++) {
-        if (hands[i][10] > 0) {
-            if (hands.size() > 2) {
-                printf 'Hand ' + i +': '
-            }
-            if (hands[0][0][0][1] == 10) {
-                println 'The dealer has blackjack. You win your insurance bet!'
-                gambler_chips_cash += hands[i][10] * 2
-                proceeds += hands[i][10] * 2
-            } else {
-                println 'The dealer does not have blackjack. You lose your insurance bet.'
-                gambler_chips_cash -= hands[i][10]
-                proceeds -= hands[i][10]
-            }
+    if (ins_wager > 0) {
+        if (hands[0][0][0][1] == 10) {
+            gambler_chips_cash += ins_wager * 2
+            proceeds += ins_wager * 2
+        } else {
+            gambler_chips_cash -= ins_wager
+            proceeds -= ins_wager
         }
+    }
+    for (int i = 1;i<hands.size();i++) {
         if (hands.size() > 2) {
             printf 'Hand ' + i +': '
         }
@@ -1583,17 +1597,16 @@ def mainMethod() {
         show_start()
         while (hands_index < hands.size()) {
             (buy_ins, ins_wager) = insurance()
-            if (buy_ins == 'Y') {
-                hands[hands_index][10] = ins_wager
-            }
-            action = get_action()
-            cut_card_drawn = reaction()
-            while (action !in ['','A','D','Q'] && !hands[hands_index][6]) {
+            if (!(hands[0][0][1][1] == 11 && hands[0][0][0][1] == 10)) {
                 action = get_action()
                 cut_card_drawn = reaction()
-            }
-            if (action == 'S') {
-                show_hand()
+                while (action !in ['','A','D','Q'] && !hands[hands_index][6]) {
+                    action = get_action()
+                    cut_card_drawn = reaction()
+                }
+                if (action == 'S') {
+                    show_hand()
+                }
             }
             hands_played += 1
             hands_index += 1

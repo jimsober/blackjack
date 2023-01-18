@@ -187,7 +187,6 @@ def standings() {
     cash = gambler_chips_cash - gambler_chips_cash.intValue()
     gam_bal_string = '$' + gambler_balance.toString()
     gam_acc_string = '$' + gambler_account.toString()
-    cash_string = '$' + cash.toString()
     if (gambler_chips_cash.intValue().toString().length() <= 4) {
         chips_pad = 5
     } else {
@@ -435,7 +434,7 @@ def insurance() {
             ins_wager = wager/2
             input_err = true
             while (input_err) {
-                input = System.console().readLine "Enter insurance wager [${ins_wager.toString()}]: "
+                input = System.console().readLine "Enter insurance wager [" + java.text.NumberFormat.currencyInstance.format(ins_wager) + "]: "
                 if (input.trim() == '') {
                     input_err = false
                     input = ins_wager.floatValue()
@@ -450,7 +449,7 @@ def insurance() {
                                 input_err = false
                                 ins_wager = input
                             } catch (AssertionError ignored) {
-                                printf 'Insurance wager maximum is ' + ins_wager.toString() + '.'
+                                printf 'Insurance wager maximum is ' + java.text.NumberFormat.currencyInstance.format(ins_wager) + '.'
                                 make_sound('Hero.aiff')
                                 println()
                             }
@@ -470,7 +469,7 @@ def insurance() {
                     }
                 }
             }
-            println "You have placed an insurance wager of " + ins_wager
+            println "You have placed an insurance wager of " + java.text.NumberFormat.currencyInstance.format(ins_wager)
             make_sound('Bottle.aiff')
             println()
         }
@@ -1298,15 +1297,14 @@ def results() {
         sleep(500)
     }
     cash = proceeds - proceeds.intValue()
-    cash_string = '$' + cash.toString()
     if (cash != 0) {
         printf 'Total proceeds: '
         if (proceeds >= 0) {
             printf "${(char)27}[32;40"+'m' + proceeds.intValue().toString() + default_style + \
-          ' chips and ' + "${(char)27}[32;40"+'m' + cash_string + default_style
+          ' chips and ' + "${(char)27}[32;40"+'m' + java.text.NumberFormat.currencyInstance.format(cash) + default_style
         } else {
             printf "${(char)27}[31;40"+'m' + proceeds.intValue().toString() + default_style + \
-          ' chips and ' + "${(char)27}[31;40"+'m' + cash_string + default_style
+          ' chips and ' + "${(char)27}[31;40"+'m' + java.text.NumberFormat.currencyInstance.format(cash) + default_style
         }
     } else {
         printf 'Total proceeds: '
@@ -1617,11 +1615,10 @@ def mainMethod() {
         cut_card_drawn = dealer_hits()
         gambler_chips_cash = results()
         cash = gambler_chips_cash - gambler_chips_cash.intValue()
-        cash_string = '$' + cash.toString()
         printf 'Result: ' + "${(char)27}[32;40"+'m' + gambler_chips_cash.intValue().toString() + default_style + \
           ' chips'
         if (cash > 0) {
-             printf ' and ' + "${(char)27}[32;40"+'m' + cash_string + default_style
+             printf ' and ' + "${(char)27}[32;40"+'m' + java.text.NumberFormat.currencyInstance.format(cash) + default_style
         }
         println()
         println()

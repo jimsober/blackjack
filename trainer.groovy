@@ -50,7 +50,7 @@ def init_game() {
     while (gambler_account < min_wager) {
         make_sound('Tink.aiff')
         System.console().readLine 'You must have at least ' + min_wager.toString() + \
-          ' chips to wager. Press any key to continue to Cashier. '
+          ' chips to wager. Press <Enter> to continue to Cashier. '
         println()
         (gambler_account, gambler_chips_cash) = cashier("B")
     }
